@@ -1,0 +1,75 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:Mobile"
+             xmlns:viewModel ="clr-namespace:Mobile.ViewModel"
+             xmlns:converters ="clr-namespace:Mobile.Converters"
+             x:Class="Mobile.LoginPage">
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <converters:InvalidEmailValueConverter x:Key="invalidEmailValueConverter" />
+            <converters:InvalidPasswordValueConverter x:Key="invalidPasswordValueConverter" />
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <Grid VerticalOptions="Center"
+          HorizontalOptions="Center">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="3*" />
+        </Grid.ColumnDefinitions>
+
+        <Grid.RowDefinitions>
+            <RowDefinition />
+            <RowDefinition />
+            <RowDefinition />
+        </Grid.RowDefinitions>
+
+        <Label Grid.Row="0" 
+               Grid.Column="0"
+               Text="Email:" 
+               VerticalOptions="CenterAndExpand"/>
+
+        <Entry x:Name="emailEntry"
+               Grid.Row="0"
+               Grid.Column="1" 
+               Placeholder="someone@email.com" 
+               VerticalOptions="CenterAndExpand"
+               Text="{Binding Path=Email, Mode=TwoWay}"/>
+
+        <Label Grid.Row="1" 
+               Grid.Column="0" 
+               Text="Password:" 
+               VerticalOptions="CenterAndExpand"/>
+
+        <Entry x:Name="passwordEntry"
+               Grid.Row="1" 
+               Grid.Column="1" 
+               IsPassword="True" 
+               VerticalOptions="CenterAndExpand"
+               Text="{Binding Path=Password, Mode=TwoWay}"/>
+
+        <Button x:Name="loginButton"
+                Grid.Row="2" 
+                Grid.ColumnSpan="2"
+                Text="Login"
+                HorizontalOptions="Center"
+                Command="{Binding LoginCommand}"
+                WidthRequest="{Binding Source={x:Reference emailEntry}, Path=Width}">
+            <!--Button.Triggers>
+                <DataTrigger TargetType="Button"
+                             Binding="{Binding Source={x:Reference emailEntry}, Path=Text.Length}"
+                             Value="0">
+                    <Setter Property="IsEnabled" Value="False" />
+                </>
+                <MultiTrigger TargetType="Button">
+                    <MultiTrigger.Conditions>
+                        <BindingCondition Binding="{Binding Source={x:Reference emailEntry}, Path=Text, Converter={StaticResource invalidEmailValueConverter}}" Value="True"/>
+                        <BindingCondition Binding="{Binding Source={x:Reference passwordEntry}, Path=Text, Converter={StaticResource invalidPasswordValueConverter}}" Value="True"/>
+                    </MultiTrigger.Conditions>
+                    <Setter Property="IsEnabled" Value="False" />
+                </MultiTrigger>
+            </-->
+        </Button>
+    </Grid>
+</ContentPage>

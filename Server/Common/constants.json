@@ -1,0 +1,32 @@
+{
+    "serviceNames":{
+        "apiServiceName" : "APIService",
+        "userAuthServiceName" : "UserAuthService",
+        "userDetailsServiceName" : "UserDetailsService",
+        "groupsServiceName" : "GroupsService",
+        "groupLinksServiceName" : "GroupLinksService",
+        "groupsRecommendationServiceName" : "groupsRecommendationService",
+        "eventsServiceName" : "EventsService",
+        "emailServiceName" : "EmailService"
+    },
+
+    "urlNames": {
+    	"login" : "login",
+    	"userauth": "userauth",
+    	"userdetails" : "userdetails",
+    	"groups":"groups",
+    	"grouplinks":"grouplinks",
+        "groupsrecommendation":"groupsrecommendation",
+    	"events":"events",
+        "email" : "email"
+    },
+
+    "corsOrigin" : [
+        "*"
+    ],
+
+    "nodeLinksUpdateStoredProcName" : "nodeLinksUpdateStoredProc",
+    "nodeLinksQueryStoredProcName" : "nodeLinksQueryStoredProc",
+
+    "emptyGuid" : "00000000-0000-0000-0000-000000000000"
+}

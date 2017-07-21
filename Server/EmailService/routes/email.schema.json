@@ -1,0 +1,28 @@
+{
+  "title" : "email",
+  "description": "body object for sending email",
+  "type": "object",
+  "properties": {
+    "fromAddress": {
+      "type": "string",
+      "description": "Sender address"
+    },
+    "toAddress": {
+      "type": "string",
+      "description": "receipent address"
+    },
+    "subject": {
+      "type": "string",
+      "description": "email subject"
+    },
+    "textEmailBody": {
+      "type": "string",
+      "description": "email in plain text"
+    },
+    "htmlEmailBody": {
+      "type": "string",
+      "description": "email in html"
+    }
+  },
+  "required": ["fromAddress", "toAddress", "subject", "textEmailBody", "htmlEmailBody"]
+}
