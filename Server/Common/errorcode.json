@@ -39,5 +39,6 @@
     "GenericHttpRequestException" : "GenericHttpRequestException",
     "GenericInternalServerException" : "GenericInternalServerException" ,
     "GenericDatabaseException" : "GenericDatabaseException",
+    "GenericStorageException" : "GenericStorageException",
     "GenericForbiddenException" : "GenericForbiddenException"
 }

@@ -7,7 +7,8 @@
         "groupLinksServiceName" : "GroupLinksService",
         "groupsRecommendationServiceName" : "groupsRecommendationService",
         "eventsServiceName" : "EventsService",
-        "emailServiceName" : "EmailService"
+        "emailServiceName" : "EmailService",
+        "storageServiceName" : "StorageService"
     },
 
     "urlNames": {
@@ -18,7 +19,8 @@
     	"grouplinks":"grouplinks",
         "groupsrecommendation":"groupsrecommendation",
     	"events":"events",
-        "email" : "email"
+        "email" : "email",
+        "storage" : "storage"
     },
 
     "corsOrigin" : [

@@ -7,9 +7,9 @@ module.exports = class DatabaseException extends ExceptionBase{
     constructor(docdbErr){
         var parsedBody;
         try{
-        	if (docdbErr){
-	            parsedBody = JSON.parse(docdbErr.body);
-	        }
+            if (docdbErr){
+                parsedBody = JSON.parse(docdbErr.body);
+            }
         }
         catch(e){
         }

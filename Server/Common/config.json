@@ -24,7 +24,9 @@
     "groupsRecommendationServicePort" : 1343,
     "groupsRecommendationServiceEndpoint" : "http://localhost:1343",
     "emailServicePort" : 1344,
-    "emailServiceEndpoint" : "http://localhost:1344"
+    "emailServiceEndpoint" : "http://localhost:1344",
+    "storageServicePort" : 1345,
+    "storageServiceEndpoint" : "http://localhost:1345"
   },
   "production": {
     "jwtSecret" : "395b2bdd68bf70b057d49ac75982dda0fdb70cf46b54b9e3476e05e81feceb6f",
@@ -51,6 +53,8 @@
     "groupsRecommendationServicePort" : 1343,
     "groupsRecommendationServiceEndpoint" : "http://localhost:1343",
     "emailServicePort" : 1344,
-    "emailServiceEndpoint" : "http://localhost:1344"
+    "emailServiceEndpoint" : "http://localhost:1344",
+    "storageServicePort" : 1345,
+    "storageServiceEndpoint" : "http://localhost:1345"
   }
 }

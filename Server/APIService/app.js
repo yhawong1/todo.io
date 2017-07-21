@@ -128,7 +128,7 @@ var userAuthCorsOptions = {
 app.post('/userauth', cors(userAuthCorsOptions), helpers.wrap(function *(req, res){
     var options = helpers.getRequestOption(req, config.userAuthServiceEndpoint + '/userauth', 'POST'); 
     var results = yield *helpers.forwardHttpRequest(options, serviceNames.userAuthServiceName);
-    res.status(200).json(JSON.parse(results));
+    res.status(201).json(JSON.parse(results));
 }));
 
 // all other urls - all APIs are subject to token authentication
