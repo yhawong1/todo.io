@@ -24,7 +24,7 @@ module.exports = {
             	options = {};
             }
 
-            return client.createDocumentAsync(collectionLink, obj, options).fail(function(err){
+            return client.createDocumentAsync(collectionLink, obj, options).catch(function(err){
                 if (typeof(errorHandler) === 'function'){
                     errorHandler(err);
                 }
@@ -39,7 +39,7 @@ module.exports = {
             if (typeof(options) === 'undefined'){
             	options = {};
             }
-            return client.queryDocuments(collectionLink, querySpec, options).toArrayAsync().fail(function(err){
+            return client.queryDocuments(collectionLink, querySpec, options).toArrayAsync().catch(function(err){
                 throw new DatabaseException(err);
             });
         }
@@ -52,7 +52,7 @@ module.exports = {
             if (typeof(options) === 'undefined'){
             	options = {};
             }
-            return client.replaceDocumentAsync(documentLink, document, options).fail(function(err){
+            return client.replaceDocumentAsync(documentLink, document, options).catch(function(err){
                 throw new DatabaseException(err);
             });
         }
@@ -65,7 +65,7 @@ module.exports = {
             if (typeof(options) === 'undefined'){
             	options = {};
             }
-            return client.deleteDocumentAsync(documentLink, options).fail(function(err){
+            return client.deleteDocumentAsync(documentLink, options).catch(function(err){
                 throw new DatabaseException(err);
             });
         }
@@ -77,7 +77,7 @@ module.exports = {
             if (typeof(options) === 'undefined'){
                 options = {};
             }
-            return client.executeStoredProcedureAsync(storedProcedureLink, params, options).fail(function(err){
+            return client.executeStoredProcedureAsync(storedProcedureLink, params, options).catch(function(err){
                 throw new DatabaseException(err);
             });
         }
