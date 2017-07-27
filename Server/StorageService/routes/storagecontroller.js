@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 module.exports = function(config, logger){
     var express = require('express');
@@ -11,24 +11,14 @@ module.exports = function(config, logger){
     var ForbiddenException = require('../../common/forbiddenexception.js');
     var BadRequestException = require('../../common/badrequestexception.js');
     var errorcode = require('../../common/errorcode.json');
+    var StorageBlob = require('../../common/StorageBlob.js').StorageBlob;
+    var storageBlob = new StorageBlob(config.azureStorageBlobConnectionString);
 
     router.post('/', helpers.wrap(function *(req, res) {
-        if (req.query.action === 'send'){
-            var fromAddress = req.body.fromAddress;
-            var toAddress = req.body.toAddress;
-            var subject = req.body.subject;
-            var textEmailBody = req.body.textEmailBody;
-            var htmlEmailBody = req.body.htmlEmailBody;
+        var result = yield storageBlob.createContainerIfNotExistsAsync('test');
 
-            logger.get().debug({req : req}, 'Sending email...');
-            yield helpers.sendMail(fromAddress, toAddress, subject, textEmailBody, htmlEmailBody);
+        res.status(200).json(result);
 
-            logger.get().debug({req : req}, 'Email sent successfully.');
-            res.status(200).json({});
-        }
-        else{
-            throw new BadRequestException('action is not specified or unknown in query string.', errorcode.InvalidSendMailBody);
-        }         
     }));
 
     return router;

@@ -96,6 +96,10 @@ module.exports = {
         ex.serviceName = serviceName;
         ex.activityid = req.headers['activityid'];
 
+        if (!ex.isExceptionBase){
+            ex = new InternalServerException('Fatal error.', errorcode.GenericInternalServerException, ex);
+        }
+
         // logStack always false for json returned in response
         var exceptionJson = this.getExceptionResponseJson(ex, false, false);
         

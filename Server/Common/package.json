@@ -5,6 +5,7 @@
   "main": "Dal.js",
   "dependencies": {
     "azure-storage": "^2.2.1",
+    "azure-storage-simple": "^0.6.0",
     "bluebird": "^3.5.0",
     "bunyan": "^1.8.10",
     "documentdb-q-promises": "^1.6.0",
