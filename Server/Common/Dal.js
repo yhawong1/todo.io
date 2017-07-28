@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 var DocumentClient = require('documentdb-q-promises').DocumentClientWrapper;
 var DatabaseException = require('./databaseexception.js');

@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 var jwtSimple = require('jwt-simple');
 var helpers = require('./helpers.js');

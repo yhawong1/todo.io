@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 module.exports = function(passport, config, logger){
     var helpers = require('../common/helpers.js');

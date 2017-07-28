@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 var bunyan = require('bunyan');
 var helpers = require('./helpers.js');

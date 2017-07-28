@@ -1,5 +1,4 @@
-
-'use strict'
+'use strict';
 
 module.exports = function(config, logger){
     var router = require('express').Router();
