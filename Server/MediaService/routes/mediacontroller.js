@@ -21,14 +21,14 @@ module.exports = function(config, logger){
 
     router.post('/', helpers.wrap(function *(req, res) {
 
-/*
         logger.get().debug({req : req}, 'Saving file object...');
+/*
         var result = yield storageBlob.createContainerIfNotExistsAsync('test');
 
         result = yield storageBlob.createAppendBlobFromLocalFileAsync('test', 'testblob', 'c:/a/GetMedia (8).jpg');
         var created = result.created;
 */
-        var identity = req.headers[headerNames.identityHeaderNameg];
+        var identity = req.headers[headerNames.identityHeaderName];
 
         if (!identity){
             //throw new ForbiddenException('Identity is not found.');
@@ -65,7 +65,7 @@ module.exports = function(config, logger){
         });
 
         form.on('aborted', function(){
-
+            // aborted response
         });
 
         form.on('progress', function(bytesReceived, bytesExpected){
@@ -79,9 +79,7 @@ module.exports = function(config, logger){
         });
 
         // Parse req
-        form.parse(req);        
-
-        //console.log(body);
+        form.parse(req);
     }));
 
     router.delete('/', helpers.wrap(function *(req, res) {

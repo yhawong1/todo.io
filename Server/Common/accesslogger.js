@@ -5,7 +5,7 @@ var headerNames = require('./constants.json')['headerNames'];
 
 module.exports = {
 
-    'getAccessLogger' : function getAccessLogger(logger){
+    getAccessLogger : function getAccessLogger(logger){
          return morgan(function(tokens, req, res){
             return JSON.stringify({
                 method : tokens.method(req, res),
