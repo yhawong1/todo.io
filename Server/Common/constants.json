@@ -30,8 +30,8 @@
     "headerNames" : {
         "versionHeaderName" : "version",
         "identityHeaderName" : "auth-header",
-        "activityIdHeaderName" : "activityid"
-    }
+        "activityidHeaderName" : "activityid"
+    },
 
     "nodeLinksUpdateStoredProcName" : "nodeLinksUpdateStoredProc",
     "nodeLinksQueryStoredProcName" : "nodeLinksQueryStoredProc",

@@ -3,7 +3,7 @@
 var bunyan = require('bunyan');
 var helpers = require('./helpers.js');
 var util = require('util');
-var headerNames = require('../common/constants.json')['headerNames'];
+var headerNames = require('./constants.json')['headerNames'];
 
 module.exports = {
     

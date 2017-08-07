@@ -14,7 +14,7 @@ module.exports = function(config, logger){
     var helpers = require('../../common/helpers.js');
     var BadRequestException = require('../../common/badrequestexception.js');
     var errorcode = require('../../common/errorcode.json');
-    var headerNames = require('../common/constants.json')['headerNames'];
+    var headerNames = require('../../common/constants.json')['headerNames'];
 
     router.get('/:id', helpers.wrap(function *(req, res) {
         var fields;

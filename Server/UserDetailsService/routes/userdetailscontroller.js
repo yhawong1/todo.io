@@ -16,7 +16,7 @@ module.exports = function(config, logger){
     var BadRequestException = require('../../common/badrequestexception.js');
     var ForbiddenException = require('../../common/forbiddenexception.js');
     var errorcode = require('../../common/errorcode.json');
-    var headerNames = require('../common/constants.json')['headerNames'];
+    var headerNames = require('../../common/constants.json')['headerNames'];
 
     router.get('/:id', helpers.wrap(function *(req, res) {    
         logger.get().debug({req : req}, 'Retriving userDetails object.');

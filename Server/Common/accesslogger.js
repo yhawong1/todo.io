@@ -1,7 +1,7 @@
 'use strict';
 
 var morgan = require('morgan');
-var headerNames = require('../common/constants.json')['headerNames'];
+var headerNames = require('./constants.json')['headerNames'];
 
 module.exports = {
 

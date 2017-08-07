@@ -11,7 +11,7 @@ var nodemailer = require('nodemailer');
 var sendMailConfig = require('./sendmailconfig.json');
 var errorcode = require('./errorcode.json');
 var uuid = require('node-uuid');
-var headerNames = require('../common/constants.json')['headerNames'];
+var headerNames = require('./constants.json')['headerNames'];
 
 module.exports = {
 
@@ -34,10 +34,10 @@ module.exports = {
     getRequestOption : function (req, targetEndpoint, method){
         return {
             method : method,
-            headers: {'content-type' : 'application/json; charset=utf-8',
-                       headerNames.identityHeaderName : req.headers[headerNames.identityHeaderName],
-                       headerNames.versionHeaderName : req.headers[headerNames.versionHeaderName],
-                       headerNames.activityidHeaderName : req.headers[headerNames.activityidHeaderName]},
+            headers: { 'content-type' : 'application/json; charset=utf-8',
+                       'auth-identity' : req.headers[headerNames.identityHeaderName],
+                       'version' : req.headers[headerNames.versionHeaderName],
+                       'activityid' : req.headers[headerNames.activityidHeaderName]},
             url: targetEndpoint,
             body: JSON.stringify(req.body)
         };

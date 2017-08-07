@@ -1,11 +1,11 @@
 'use strict';
 
-var errorcode = require('./errorcode.json');
+var errorcodes = require('./errorcode.json');
 var ExceptionBase = require('./exceptionbase.js');
 
 module.exports = class HttpRequestException extends ExceptionBase{  
     constructor(message, url, innerException){
-        super(message, 'HttpRequestException', errorcode.GenericHttpRequestException, 503, errorcode.GenericHttpRequestException, innerException);
+        super(message, 'HttpRequestException', errorcodes.GenericHttpRequestException, 503, errorcodes.GenericHttpRequestException, innerException);
         this.url = url;
     }
 

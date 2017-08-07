@@ -1,11 +1,11 @@
 'use strict';
 
-var errorcode = require('./errorcode.json');
+var errorcodes = require('./errorcode.json');
 var ExceptionBase = require('./exceptionbase.js');
 
 module.exports = class EmailException extends ExceptionBase{  
     constructor(emailError){
-        super('Email could not be sent.', 'EmailException', errorcode.SendEmailError, 503);
+        super('Email could not be sent.', 'EmailException', errorcodes.SendEmailError, 503);
         this.errno = emailError.errno;
         this.syscall = emailError.syscall;
         this.address = emailError.hostname || emailError.address;

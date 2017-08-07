@@ -1,6 +1,6 @@
 'use strict';
 
-var errorcode = require('./errorcode.json');
+var errorcodes = require('./errorcode.json');
 var util = require('util');
 
 module.exports = class ExceptionBase extends Error{
@@ -49,7 +49,7 @@ module.exports = class ExceptionBase extends Error{
                     returnedJson.innerException = {
                         code : 500,
                         message : 'Unknown server error.',
-                        errorcode : errorcode.GenericInternalServerException,
+                        errorcode : errorcodes.GenericInternalServerException,
                         name : this.name
                     };                    
                 }
