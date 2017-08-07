@@ -14,6 +14,7 @@ module.exports = function(config, logger){
     var helpers = require('../../common/helpers.js');
     var BadRequestException = require('../../common/badrequestexception.js');
     var errorcode = require('../../common/errorcode.json');
+    var headerNames = require('../common/constants.json')['headerNames'];
 
     router.get('/:id', helpers.wrap(function *(req, res) {
         var fields;
@@ -52,8 +53,8 @@ module.exports = function(config, logger){
         // TODO: Validate group objects in body
         var group = req.body;
 
-        //group['createdById'] = req.headers['auth-identity'];
-        //group['ownedById'] = req.headers['auth-identity'];
+        //group['createdById'] = req.headers[headersName.identityHeaderName];
+        //group['ownedById'] = req.headers[headersName.identityHeaderName];
 
         logger.get().debug({req : req, group: group}, 'Creating group object...');
         var documentResponse = yield dal.insertAsync(group, {});
@@ -66,8 +67,8 @@ module.exports = function(config, logger){
         // TODO: Validate group objects in body
         var group = req.body;
 
-        //group['createdById'] = req.headers['auth-identity'];
-        //group['ownedById'] = req.headers['auth-identity'];
+        //group['createdById'] = req.headers[headersName.identityHeaderName];
+        //group['ownedById'] = req.headers['headersName.identityHeaderName];
 
         logger.get().debug({req : req, group: group}, 'Updating group object...');
         var documentResponse = yield dal.updateAsync(req.params.id, group);

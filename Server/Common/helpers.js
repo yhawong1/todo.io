@@ -11,6 +11,7 @@ var nodemailer = require('nodemailer');
 var sendMailConfig = require('./sendmailconfig.json');
 var errorcode = require('./errorcode.json');
 var uuid = require('node-uuid');
+var headerNames = require('../common/constants.json')['headerNames'];
 
 module.exports = {
 
@@ -34,9 +35,9 @@ module.exports = {
         return {
             method : method,
             headers: {'content-type' : 'application/json; charset=utf-8',
-                      'auth-identity' : req.headers['auth-identity'],
-                      'version' : req.headers['version'],
-                      'activityid' : req.headers['activityid']},
+                       headerNames.identityHeaderName : req.headers[headerNames.identityHeaderName],
+                       headerNames.versionHeaderName : req.headers[headerNames.versionHeaderName],
+                       headerNames.activityidHeaderName : req.headers[headerNames.activityidHeaderName]},
             url: targetEndpoint,
             body: JSON.stringify(req.body)
         };
@@ -74,9 +75,9 @@ module.exports = {
     },
 
     forwardHttpRequest : function *(options, serviceName){
-        if (!options.headers['activityid']){
+        if (!options.headers[headerNames.activityidHeaderName]){
             var activityid = uuid.v4();
-            options.headers['activityid'] = activityid;
+            options.headers[headerNames.activityidHeaderName] = activityid;
         }
         return yield request(options).catch(function(err){
             try{
@@ -94,7 +95,7 @@ module.exports = {
 
     handleServiceException : function (ex, req, res, serviceName, logger, logStack){
         ex.serviceName = serviceName;
-        ex.activityid = req.headers['activityid'];
+        ex.activityid = req.headers[headerNames.activityidHeaderName];
 
         if (!ex.isExceptionBase){
             ex = new InternalServerException('Fatal error.', errorcode.GenericInternalServerException, ex);
@@ -163,6 +164,7 @@ module.exports = {
                 transporter.close();
             })
             .catch(function(err){
+                transporter.close();
                 throw new EmailException(err);            
             });
     }

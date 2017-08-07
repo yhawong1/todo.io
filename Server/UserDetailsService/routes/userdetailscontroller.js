@@ -16,6 +16,7 @@ module.exports = function(config, logger){
     var BadRequestException = require('../../common/badrequestexception.js');
     var ForbiddenException = require('../../common/forbiddenexception.js');
     var errorcode = require('../../common/errorcode.json');
+    var headerNames = require('../common/constants.json')['headerNames'];
 
     router.get('/:id', helpers.wrap(function *(req, res) {    
         logger.get().debug({req : req}, 'Retriving userDetails object.');
@@ -63,8 +64,8 @@ module.exports = function(config, logger){
 
     function checkCallerPermission(req, id){
         /*
-        logger.get().debug({req : req}, 'Checking user permission. header.auth-identity %s, id: %s...', req.headers['auth-identity'], req.params.id);
-        if (req.headers['auth-identity'] !== id){
+        logger.get().debug({req : req}, 'Checking user permission. header.auth-identity %s, id: %s...', req.headers[headerNames.identityHeaderName], req.params.id);
+        if (req.headers[headerNames.identityHeaderName] !== id){
             throw new ForbiddenException('Forbidden');
         } 
         */

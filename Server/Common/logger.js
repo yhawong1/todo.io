@@ -3,12 +3,13 @@
 var bunyan = require('bunyan');
 var helpers = require('./helpers.js');
 var util = require('util');
+var headerNames = require('../common/constants.json')['headerNames'];
 
 module.exports = {
     
     Logger : function Logger(serviceName, loggerName, isDebug){
 
-        var loggedHeaders = ['version', 'auth-identity', 'authorization', 'activityid'];
+        var loggedHeaders = [headerNames.versionHeaderName, headerNames.idenityHeaderName, 'authorization', headerNames.activityidHeaderName];
 
         this.serviceName = serviceName;     
         if (!loggerName){

@@ -8,7 +8,7 @@
         "groupsRecommendationServiceName" : "groupsRecommendationService",
         "eventsServiceName" : "EventsService",
         "emailServiceName" : "EmailService",
-        "storageServiceName" : "StorageService"
+        "mediaServiceName" : "MediaService"
     },
 
     "urlNames": {
@@ -20,12 +20,18 @@
         "groupsrecommendation":"groupsrecommendation",
     	"events":"events",
         "email" : "email",
-        "storage" : "storage"
+        "media" : "media"
     },
 
     "corsOrigin" : [
         "*"
     ],
+
+    "headerNames" : {
+        "versionHeaderName" : "version",
+        "identityHeaderName" : "auth-header",
+        "activityIdHeaderName" : "activityid"
+    }
 
     "nodeLinksUpdateStoredProcName" : "nodeLinksUpdateStoredProc",
     "nodeLinksQueryStoredProcName" : "nodeLinksQueryStoredProc",

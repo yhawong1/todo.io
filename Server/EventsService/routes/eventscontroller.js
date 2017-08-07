@@ -17,6 +17,7 @@ module.exports = function(config, logger){
     var BadRequestException = require('../../common/badrequestexception.js');
     var ForbiddenException = require('../../common/forbiddenexception.js');
     var errorcode = require('../../common/errorcode.json');
+    var headerNames = require('../common/constants.json')['headerNames'];
 
     router.get('/:id', helpers.wrap(function *(req, res) {
         var fields;
@@ -64,7 +65,7 @@ module.exports = function(config, logger){
         // TODO: Validate event object in body         
         var event = req.body;
         /*
-        if (event['ownedById'] !== req.headers['auth-identity']){
+        if (event['ownedById'] !== req.headers[headerNames.identityHeaderName]){
             throw new ForbiddenException('Forbidden');
         }
         */
@@ -79,8 +80,8 @@ module.exports = function(config, logger){
         var event = req.body;
 
         /*
-        event['createdById'] = req.headers['auth-identity'];
-        event['ownedById'] = req.headers['auth-identity'];
+        event['createdById'] = req.headers[headerNames.identityHeaderName];
+        event['ownedById'] = req.headers[headerNames.identityHeaderName];
         */
 
         logger.get().debug({req : req}, 'Creating event object...');

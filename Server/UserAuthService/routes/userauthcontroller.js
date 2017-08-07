@@ -19,6 +19,7 @@ module.exports = function(passport, config, logger){
     var Validator = require('../../common/bodyschemavalidator.js');
     var bodyschemavalidator = new Validator.BodySchemaValidator();
     var userauthschema = require('./userauth.schema.json');
+    var headerNames = require('../common/constants.json')['headerNames'];
 
     bodyschemavalidator.addSchema(userauthschema, 'userauth');
 
@@ -72,5 +73,5 @@ module.exports = function(passport, config, logger){
 }
 
 function isOperationAuthorized(req){
-    return req.headers['auth-identity'] === req.params.id;
+    return req.headers[headerNames.identityHeaderName] === req.params.id;
 }

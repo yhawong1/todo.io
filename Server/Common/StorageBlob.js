@@ -9,23 +9,28 @@ module.exports = {
 
     StorageBlob: function StorageBlob(connectionString) {
         this.connectionString = connectionString;
+        this.blobService = storage.createBlobService(this.connectionString);
 
         this.createContainerIfNotExistsAsync = function createContainerIfNotExistsAsync(containerName){
-            var blobService = this.getBlobService();
-            return blobService.createContainerIfNotExistsAsync(containerName).catch(err => {
+            return this.blobService.createContainerIfNotExistsAsync(containerName).catch(err => {
+                throw new StorageException(err);
+            });
+        }
+
+        this.createAppendBlobFromLocalFileAsync = function createAppendBlobFromLocalFileAsync(containerName, blobName, fileName){
+            return this.blobService.createAppendBlobFromLocalFileAsync(containerName, blobName, fileName).catch(err => {
+                throw new StorageException(err);
+            });
+        }
+
+        this.createAppendBlobFromStreamAsync = function createAppendBlobFromStreamAsync(containerName, blobName, fileName){
+            return this.blobService.createAppendBlobFromLocalFileAsync(containerName, blobName, fileName).catch(err => {
                 throw new StorageException(err);
             });
         }
 
         this.getBlobService = function getBlobService() {
             return storage.createBlobService(this.connectionString);
-        }
-
-        this.foo = function foo(containerName, onCompleted){
-            var blobService = this.getBlobService();
-            blobService.createContainerIfNotExists(containerName, function(error, result, response){
-                onCompleted(error, result, response);
-            });
         }
     }
 }

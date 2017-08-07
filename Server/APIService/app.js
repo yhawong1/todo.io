@@ -38,6 +38,7 @@ var UnauthorizedException = require('../common/unauthorizedexception.js');
 var HttpRequestException = require('../common/httprequestexception.js');
 var errorcode = require('../common/errorcode.json');
 var corsOrigin = require('../common/constants.json')['corsOrigin'];
+var headerNames = require('../common/constants.json')['headerNames'];
 
 logger.get().debug('Starting %s.....', serviceNames.apiServiceName);
 
@@ -70,14 +71,14 @@ app.use('/', cors(defaultCorsOptions), bodyParser.json(), function (req, res, er
 // attach activity id to all requests
 app.use('/', cors(defaultCorsOptions), function (req, res, next){
     var activityid = uuid.v4();
-    req.headers['activityid'] = activityid;
+    req.headers[headerNames.activityidHeaderName] = activityid;
     logger.get().debug({req : req}, 'Attach ActivityId %s to request.', activityid);
     next();
 });
 
 // all requests are subject to version header check
 app.use('/', cors(defaultCorsOptions), function (req, res, next){
-    if (!req.headers['version']){
+    if (!req.headers[headerNames.versionHeaderName]){
         throw new BadRequestException('Cannot find version in header.', errorcode.VersionNotFoundInHeader);
     }
     else{
@@ -141,8 +142,8 @@ app.use('/', cors(defaultCorsOptions), helpers.wrap(function *(req, res, next){
         else{
             // set auth-identity header so that internal services
             // know the caller's identity
-            req.headers['auth-identity'] = user;
-            logger.get().debug({req : req}, 'Attach auth-identity %s to request header.', user);
+            req.headers[headerNames.identityHeaderName] = user;
+            logger.get().debug({req : req}, 'Attach %s %s to request header.', headerNames.identityHeaderName, user);
             // continue calling middleware in line
             next();
         }

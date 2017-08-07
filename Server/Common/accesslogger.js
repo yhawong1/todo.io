@@ -1,6 +1,7 @@
 'use strict';
 
 var morgan = require('morgan');
+var headerNames = require('../common/constants.json')['headerNames'];
 
 module.exports = {
 
@@ -10,8 +11,8 @@ module.exports = {
                 method : tokens.method(req, res),
                 url: tokens.url(req, res),
                 status: tokens.status(req, res),
-                activityid : tokens.req(req, res, 'activityid'),
-                authidentity : tokens.req(req, res, 'auth-identity'),
+                activityid : tokens.req(req, res, headerNames.activityidHeaderName),
+                authidentity : tokens.req(req, res, headerNames.identityHeaderName),
                 responsetime: tokens['response-time'](req, res) + 'ms'
             });
         },
