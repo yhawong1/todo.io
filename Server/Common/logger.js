@@ -9,7 +9,15 @@ module.exports = {
     
     Logger : function Logger(serviceName, loggerName, isDebug){
 
-        var loggedHeaders = [headerNames.versionHeaderName, headerNames.idenityHeaderName, 'authorization', headerNames.activityidHeaderName];
+        var loggedHeaders = 
+            [
+                headerNames.versionHeaderName, 
+                headerNames.idenityHeaderName, 
+                'authorization',
+                'content-type',
+                'host',
+                headerNames.activityidHeaderName
+            ];
 
         this.serviceName = serviceName;     
         if (!loggerName){
@@ -30,6 +38,7 @@ module.exports = {
         this.internalLogger.addSerializers({exception : exceptionSerializer});
         this.internalLogger.addSerializers({accessLog : accessLogSerializer});        
         this.internalLogger.addSerializers({userAuth : userAuthSerializer});
+        this.internalLogger.addSerializers({fileUploadResults : fileUploadResultsSerializer});
 
         if (isDebug) {
             this.internalLogger.addStream({stream : process.stdout, level : 'debug'});
@@ -55,8 +64,8 @@ module.exports = {
 
             return {
                 method: req.method,
-                url: req.url,
-                headers: headers
+                url: req.originalUrl,
+                headers: headers,                
             };
         }
 
@@ -99,6 +108,17 @@ module.exports = {
                 name : userAuth.name,
                 firstTimeLogon : userAuth.firstTimeLogon
             };
+        }
+
+        function fileUploadResultsSerializer(fileUploadResults){
+            if (!fileUploadResults){
+                return fileUploadResults;
+            }
+
+            return {
+                fields : fileUploadResults.fields,
+                files : fileUploadResults.files,
+            };            
         }
     }
 }

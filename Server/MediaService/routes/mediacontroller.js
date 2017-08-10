@@ -25,7 +25,7 @@ module.exports = function(config, logger){
 
     router.post('/', helpers.wrap(function *(req, res, errorHandler) {
 
-        logger.get().debug({req : req}, 'Saving file object...');
+        logger.get().debug({req : req}, 'Processing file upload request...');
 /*
         var result = yield storageBlob.createContainerIfNotExistsAsync('test');
 
@@ -48,10 +48,11 @@ module.exports = function(config, logger){
             });
 
         form.parseAsync(req).spread((fields, files) => {
-            console.log(util.inspect(fields));
-            console.log(util.inspect(files));
 
-            console.log('Upload completed!');
+            var fileUploadResults = { fields : fields, files : files};
+            logger.get().debug({req : req, fileUploadResults : fileUploadResults},
+                'File upload request completed successfully.');
+
             res.status(200).json({});
         }).catch(err => {
             errorHandler(new FileUploadException(err));
