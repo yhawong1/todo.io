@@ -38,6 +38,7 @@ module.exports = function(config, logger){
         var form = new multiparty.Form({'encoding':'binary'});
 
         form.parseAsync(req).spread(function(fields, files){
+            throw new ForbiddenException('forbidden');
             console.log(util.inspect(fields));
             console.log(util.inspect(files));
 
@@ -98,6 +99,14 @@ module.exports = function(config, logger){
 
         res.status(200).json(result);
     }));
+
+
+    function *wrap (genFn){
+        var cr = Promise.coroutine(genFn);
+        return function (req, resolve, errorHandler) {
+            cr(req, resolve, errorHandler).spread(resolve).catch(errorHandler);
+        }
+    };
 
     return router;
 }

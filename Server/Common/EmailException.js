@@ -14,12 +14,13 @@ module.exports = class EmailException extends ExceptionBase{
 	}
 
     getResponseJson(displayFullUnknownErrorInfo, logStack){
+        var that = this;
         var responseJson = super.getResponseJson(displayFullUnknownErrorInfo, logStack);
-        responseJson.errno = this.errno;
-        responseJson.syscall = this.syscall;
-        responseJson.address = this.address;
-        responseJson.port = this.port;
-        responseJson.command = this.command;
+        responseJson.errno = that.errno;
+        responseJson.syscall = that.syscall;
+        responseJson.address = that.address;
+        responseJson.port = that.port;
+        responseJson.command = that.command;
 
         return responseJson;
     }

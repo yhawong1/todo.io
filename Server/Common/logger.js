@@ -8,7 +8,6 @@ var headerNames = require('./constants.json')['headerNames'];
 module.exports = {
     
     Logger : function Logger(serviceName, loggerName, isDebug){
-        var that = this;
 
         var loggedHeaders = [headerNames.versionHeaderName, headerNames.idenityHeaderName, 'authorization', headerNames.activityidHeaderName];
 
@@ -37,7 +36,8 @@ module.exports = {
         }
 
         this.get = function get(){
-            return this.internalLogger;
+            var that = this;
+            return that.internalLogger;
         }
 
         function reqSerializer(req) {

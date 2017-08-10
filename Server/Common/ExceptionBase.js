@@ -5,25 +5,24 @@ var util = require('util');
 
 module.exports = class ExceptionBase extends Error{
     constructor(message, name, defaultErrorCode, httpCode, errorCode, innerException){
-        var that = this;
         super();
         if (typeof(errorCode) === 'object'){
             innerException = errorCode;
             errorCode = defaultErrorCode;
         }
 
-        that.code = httpCode;
-        Error.captureStackTrace(that, that.constructor);
-        that.name = name;
-        that.errorcode = errorCode || defaultErrorCode;
-        that.message = message;                
+        this.code = httpCode;
+        Error.captureStackTrace(this, this.constructor);
+        this.name = name;
+        this.errorcode = errorCode || defaultErrorCode;
+        this.message = message;                
         
         if (innerException){    
-            that.code = innerException.code || httpCode;
-            that.errorCode = innerException.errorcode || defaultErrorCode;
+            this.code = innerException.code || httpCode;
+            this.errorCode = innerException.errorcode || defaultErrorCode;
         }
-        that.innerException = innerException;    
-        that.isExceptionBase = true;
+        this.innerException = innerException;    
+        this.isExceptionBase = true;
     }
 
     getResponseJson(displayFullUnknownErrorInfo, logStack){

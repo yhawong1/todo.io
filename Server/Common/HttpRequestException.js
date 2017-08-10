@@ -5,12 +5,12 @@ var ExceptionBase = require('./exceptionbase.js');
 
 module.exports = class HttpRequestException extends ExceptionBase{  
     constructor(message, url, innerException){
-    	var that = this;
         super(message, 'HttpRequestException', errorcodes.GenericHttpRequestException, 503, errorcodes.GenericHttpRequestException, innerException);
-        that.url = url;
+        this.url = url;
     }
 
     getResponseJson(displayFullUnknownErrorInfo, logStack){
+    	var that = this;
         var responseJson = super.getResponseJson(displayFullUnknownErrorInfo, logStack);
         responseJson.url = that.url;
 
