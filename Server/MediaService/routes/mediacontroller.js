@@ -15,9 +15,10 @@ module.exports = function(config, logger){
     var StorageBlob = require('../../common/StorageBlob.js').StorageBlob;
     var storageBlob = new StorageBlob(config.azureStorageBlobConnectionString);
     var headerNames = require('../../common/constants.json')['headerNames'];
-    var fs = require('fs');
-    var multiparty = require('multiparty');
+    var Promise = require('bluebird');
+    var multiparty = Promise.promisifyAll(require('multiparty'), {multiArgs:true});
     var util = require('util');
+    var fs = Promise.promisifyAll(require('fs'));
 
     router.post('/', helpers.wrap(function *(req, res) {
 
@@ -34,28 +35,39 @@ module.exports = function(config, logger){
             //throw new ForbiddenException('Identity is not found.');
         }
 
+        var form = new multiparty.Form({'encoding':'binary'});
+
+        form.parseAsync(req).spread(function(fields, files){
+            console.log(util.inspect(fields));
+            console.log(util.inspect(files));
+
+            console.log('Upload completed!');
+            res.status(200).json({});
+        });
+
+        /*
         var count = 0;
-        var form = new multiparty.Form();
 
         form.on('error', function(err) {
             throw new FileUploadException(err);
         });
 
-
-        // Parts are emitted when parsing the form
         form.on('part', function(part) {
-            // You *must* act on the part by reading it
-            // NOTE: if you want to ignore it, just call "part.resume()"
-
             if (!part.filename) {
                 console.log('got field named ' + part.name);
                 part.resume();
             }
             else {
-                // filename is defined when this is a file
                 count++;
                 console.log('got file named ' + part.filename);
-                console.log(util.inspect(part));
+
+                fs.openAsync('c:\\a\\' + part.filename, 'w+');
+
+                fs.writeFileAsync('c:\\a\\' + part.filename, part);
+
+                //throw new FileUploadException();
+                //console.log(util.inspect(buf));
+
                 part.resume();
             }
 
@@ -72,14 +84,13 @@ module.exports = function(config, logger){
             console.log('progress ' + bytesReceived + ' ' + bytesExpected);
         });
 
-        // Close emitted after form parsed
         form.on('close', function() {
             console.log('Upload completed!');
             res.status(200).json({});
         });
 
-        // Parse req
         form.parse(req);
+        */
     }));
 
     router.delete('/', helpers.wrap(function *(req, res) {

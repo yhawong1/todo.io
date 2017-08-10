@@ -8,6 +8,7 @@ var headerNames = require('./constants.json')['headerNames'];
 module.exports = {
     
     Logger : function Logger(serviceName, loggerName, isDebug){
+        var that = this;
 
         var loggedHeaders = [headerNames.versionHeaderName, headerNames.idenityHeaderName, 'authorization', headerNames.activityidHeaderName];
 

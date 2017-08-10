@@ -6,10 +6,11 @@ var DatabaseException = require('./databaseexception.js');
 module.exports = {
 
     DataAccessLayer: function DataAccessLayer(databaseName, collectionName, documentdbEndpoint, documentdbAuthKey) {
-        this.databaseName = databaseName;
-        this.collectionName = collectionName;
-        this.documentdbEndpoint = documentdbEndpoint;
-        this.documentdbAuthKey = documentdbAuthKey;
+        var that = this;
+        that.databaseName = databaseName;
+        that.collectionName = collectionName;
+        that.documentdbEndpoint = documentdbEndpoint;
+        that.documentdbAuthKey = documentdbAuthKey;
 
         var collectionLink = 'dbs/' + databaseName + '/colls/' + collectionName;
 
@@ -83,7 +84,8 @@ module.exports = {
         }
 
         this.getClient = function getClient() {
-            return new DocumentClient(this.documentdbEndpoint, { "masterKey": this.documentdbAuthKey });
+            var that = this;
+            return new DocumentClient(that.documentdbEndpoint, { "masterKey": that.documentdbAuthKey });
         }
     }
 }
