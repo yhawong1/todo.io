@@ -20,7 +20,10 @@ module.exports = function(config, logger){
     var util = require('util');
     var fs = Promise.promisifyAll(require('fs'));
 
-    router.post('/', helpers.wrap(function *(req, res) {
+    var totalFilesSizeLimit = 10 * 1024 * 1024;
+    var totalFieldsSizeLimit = 2 * 1024 * 1024;
+
+    router.post('/', helpers.wrap(function *(req, res, errorHandler) {
 
         logger.get().debug({req : req}, 'Saving file object...');
 /*
@@ -35,15 +38,23 @@ module.exports = function(config, logger){
             //throw new ForbiddenException('Identity is not found.');
         }
 
-        var form = new multiparty.Form({'encoding':'binary'});
+        var form = new multiparty.Form(
+            {
+                'encoding':'binary',
+                'maxFieldsSize' : totalFieldsSizeLimit,
+                'maxFilesSize' : totalFilesSizeLimit,
+                'autoFiles' : true,
+                'autoFields' : true
+            });
 
-        form.parseAsync(req).spread(function(fields, files){
-            throw new ForbiddenException('forbidden');
+        form.parseAsync(req).spread((fields, files) => {
             console.log(util.inspect(fields));
             console.log(util.inspect(files));
 
             console.log('Upload completed!');
             res.status(200).json({});
+        }).catch(err => {
+            errorHandler(new FileUploadException(err));
         });
 
         /*
