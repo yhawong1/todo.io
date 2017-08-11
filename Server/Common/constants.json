@@ -29,7 +29,7 @@
 
     "headerNames" : {
         "versionHeaderName" : "version",
-        "identityHeaderName" : "auth-header",
+        "identityHeaderName" : "auth-identity",
         "activityidHeaderName" : "activityid"
     },
 

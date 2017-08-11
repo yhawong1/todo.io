@@ -22,6 +22,13 @@ module.exports = function(config, logger){
 
     var totalFilesSizeLimit = 10 * 1024 * 1024;
     var totalFieldsSizeLimit = 2 * 1024 * 1024;
+    var multipartyOptions = {
+                                'encoding':'binary',
+                                'maxFieldsSize' : totalFieldsSizeLimit,
+                                'maxFilesSize' : totalFilesSizeLimit,
+                                'autoFiles' : true,
+                                'autoFields' : true
+                            };
 
     router.post('/', helpers.wrap(function *(req, res, errorHandler) {
 
@@ -38,26 +45,7 @@ module.exports = function(config, logger){
             //throw new ForbiddenException('Identity is not found.');
         }
 
-        var form = new multiparty.Form(
-            {
-                'encoding':'binary',
-                'maxFieldsSize' : totalFieldsSizeLimit,
-                'maxFilesSize' : totalFilesSizeLimit,
-                'autoFiles' : true,
-                'autoFields' : true
-            });
-
-        form.parseAsync(req).spread((fields, files) => {
-
-            var fileUploadResults = { fields : fields, files : files};
-            logger.get().debug({req : req, fileUploadResults : fileUploadResults},
-                'File upload request completed successfully.');
-
-            res.status(200).json({});
-        }).catch(err => {
-            errorHandler(new FileUploadException(err));
-        });
-
+        callMultipartParse(req, res, errorHandler);
         /*
         var count = 0;
 
@@ -112,14 +100,23 @@ module.exports = function(config, logger){
         res.status(200).json(result);
     }));
 
+    function callMultipartParse(req, res, errorHandler){
+        var form = new multiparty.Form(multipartyOptions);
 
-    function *wrap (genFn){
-        var cr = Promise.coroutine(genFn);
-        return function (req, resolve, errorHandler) {
-            cr(req, resolve, errorHandler).spread(resolve).catch(errorHandler);
-        }
-    };
+        form.parseAsync(req).spread((fields, files) => {
+            var fileUploadResults = { fields : fields, files : files};
+            logger.get().debug({req : req, fileUploadResults : fileUploadResults},
+                'Uploaded files received.');
+
+            return fileUploadResults;
+        })
+        .then(r => {
+            res.status(200).json(r);
+        })
+        .catch(err => {
+            errorHandler(new FileUploadException(err));
+        });
+    }
 
     return router;
 }
-
