@@ -20,14 +20,11 @@ module.exports = function(config, logger){
     var util = require('util');
     var fs = Promise.promisifyAll(require('fs'));
 
-    var totalFilesSizeLimit = 10 * 1024 * 1024;
+    var totalFilesSizeLimit = 2 * 1024 * 1024;
     var totalFieldsSizeLimit = 2 * 1024 * 1024;
     var multipartyOptions = {
                                 'encoding':'binary',
-                                'maxFieldsSize' : totalFieldsSizeLimit,
-                                'maxFilesSize' : totalFilesSizeLimit,
-                                'autoFiles' : true,
-                                'autoFields' : true
+                                'maxFieldsSize' : totalFieldsSizeLimit
                             };
 
     router.post('/', helpers.wrap(function *(req, res, errorHandler) {
@@ -103,6 +100,46 @@ module.exports = function(config, logger){
     function callMultipartParse(req, res, errorHandler){
         var form = new multiparty.Form(multipartyOptions);
 
+        form.on('error', function(err) {
+            errorHandler(new FileUploadException(err));
+        });
+
+        form.on('part', function(part) {
+
+            if (part.filename){
+                logger.get().debug({req : req}, 'File ' + part.filename + ' received.');
+
+                part.on('data', function(chunk) {
+
+                    // plain file contents goes here
+                    console.log(chunk);
+                });
+
+                part.on('error', function(err) {
+                    form.emit('error', err);
+                });
+                try{
+                }
+                catch(err) {
+                    part.emit('error', err);
+                } 
+            }
+        });
+
+        form.on('field', function(name, value) {
+            logger.get().debug({req : req}, 'Field ' + name + ' received.');
+        });
+
+        form.on('aborted', function(err){
+            // aborted response
+        });
+
+        form.on('close', function() {
+            logger.get().debug({req : req}, 'Multipart Request completed.');
+            res.status(200).json({});
+        });
+
+        /*
         form.parseAsync(req).spread((fields, files) => {
             var fileUploadResults = { fields : fields, files : files};
             logger.get().debug({req : req, fileUploadResults : fileUploadResults},
@@ -116,6 +153,8 @@ module.exports = function(config, logger){
         .catch(err => {
             errorHandler(new FileUploadException(err));
         });
+        */
+        form.parse(req);
     }
 
     return router;
