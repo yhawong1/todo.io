@@ -20,14 +20,11 @@ module.exports = function(config, logger){
     var util = require('util');
     var fs = Promise.promisifyAll(require('fs'));
 
-    var totalFilesSizeLimit = 2 * 1024 * 1024;
-    var totalFieldsSizeLimit = 2 * 1024 * 1024;
-    var multipartyOptions = {
-                                'encoding':'binary',
-                                'maxFieldsSize' : totalFieldsSizeLimit
-                            };
+    var totalFilesSizeLimit = 10 * 1024 * 1024;
+    var totalFieldsSizeLimit = 1 * 1024 * 1024;
+    var multipartyOptions = { 'encoding' : 'binary', 'maxFieldsSize' : totalFieldsSizeLimit };
 
-    router.post('/', helpers.wrap(function *(req, res, errorHandler) {
+    router.post('/:id', helpers.wrap(function *(req, res, errorHandler) {
 
         logger.get().debug({req : req}, 'Processing file upload request...');
 /*
@@ -39,56 +36,10 @@ module.exports = function(config, logger){
         var identity = req.headers[headerNames.identityHeaderName];
 
         if (!identity){
-            //throw new ForbiddenException('Identity is not found.');
+            throw new ForbiddenException('Identity is not found.');
         }
 
-        callMultipartParse(req, res, errorHandler);
-        /*
-        var count = 0;
-
-        form.on('error', function(err) {
-            throw new FileUploadException(err);
-        });
-
-        form.on('part', function(part) {
-            if (!part.filename) {
-                console.log('got field named ' + part.name);
-                part.resume();
-            }
-            else {
-                count++;
-                console.log('got file named ' + part.filename);
-
-                fs.openAsync('c:\\a\\' + part.filename, 'w+');
-
-                fs.writeFileAsync('c:\\a\\' + part.filename, part);
-
-                //throw new FileUploadException();
-                //console.log(util.inspect(buf));
-
-                part.resume();
-            }
-
-            part.on('error', function(err) {
-                throw new FileUploadException(err);
-            });
-        });
-
-        form.on('aborted', function(){
-            // aborted response
-        });
-
-        form.on('progress', function(bytesReceived, bytesExpected){
-            console.log('progress ' + bytesReceived + ' ' + bytesExpected);
-        });
-
-        form.on('close', function() {
-            console.log('Upload completed!');
-            res.status(200).json({});
-        });
-
-        form.parse(req);
-        */
+        yield *parseFileUploadRequest(req, res, errorHandler);
     }));
 
     router.delete('/', helpers.wrap(function *(req, res) {
@@ -97,41 +48,51 @@ module.exports = function(config, logger){
         res.status(200).json(result);
     }));
 
-    function callMultipartParse(req, res, errorHandler){
+    function *parseFileUploadRequest(req, res, errorHandler){
+
+        if (req.headers['content-length'] > totalFilesSizeLimit){
+            throw new FileUploadException({statusCode : 413});
+        }
+
         var form = new multiparty.Form(multipartyOptions);
+
+        var totalByteCount = 0;
 
         form.on('error', function(err) {
             errorHandler(new FileUploadException(err));
         });
 
-        form.on('part', function(part) {
+        form.on('part', wrapPartDataEventHandler(function *(part) {
 
             if (part.filename){
                 logger.get().debug({req : req}, 'File ' + part.filename + ' received.');
+                totalByteCount += part.byteCount;
 
-                part.on('data', function(chunk) {
+                if (totalByteCount > totalFilesSizeLimit){
+                    form.emit('error', {statusCode : 413});
+                }
 
-                    // plain file contents goes here
-                    console.log(chunk);
-                });
+                part.on('data', wrapStreamDataEventHandler(function *(chunk) {
+                    var size = part.byteCount - part.byteOffset;
+                    var name = part.filename;
+
+                    yield storageBlob.createContainerIfNotExistsAsync(req.params.id);
+
+                    yield storageBlob.createBlockBlobFromStreamAsync(req.params.id, name, chunk, size);
+                }));
 
                 part.on('error', function(err) {
+                    // forward part error to form error
                     form.emit('error', err);
-                });
-                try{
-                }
-                catch(err) {
-                    part.emit('error', err);
-                } 
+                });                
             }
-        });
+            else{
+                form.handleError(part);
+            }
+        }));
 
         form.on('field', function(name, value) {
             logger.get().debug({req : req}, 'Field ' + name + ' received.');
-        });
-
-        form.on('aborted', function(err){
-            // aborted response
         });
 
         form.on('close', function() {
@@ -154,8 +115,22 @@ module.exports = function(config, logger){
             errorHandler(new FileUploadException(err));
         });
         */
-        form.parse(req);
+        yield form.parse(req);
     }
+
+    function wrapStreamDataEventHandler(genFunc){
+        var cr = Promise.coroutine(genFunc); 
+        return function (chunk) {
+            cr(chunk);
+        }
+    }    
+
+    function wrapPartDataEventHandler(genFunc){
+        var cr = Promise.coroutine(genFunc); 
+        return function (part) {
+            cr(part);
+        }
+    }    
 
     return router;
 }

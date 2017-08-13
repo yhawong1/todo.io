@@ -29,6 +29,12 @@ module.exports = {
             });
         }
 
+        this.createBlockBlobFromStreamAsync = function createBlockBlobFromStreamAsync(containerName, fileName, stream, size){
+            return this.blobService.createBlockBlobFromStreamAsync(containerName, fileName, stream, size).catch(err => {
+                throw new StorageException(err);
+            });
+        }
+
         this.getBlobService = function getBlobService() {
             return storage.createBlobService(this.connectionString);
         }
