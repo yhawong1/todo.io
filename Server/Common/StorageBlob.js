@@ -29,11 +29,25 @@ module.exports = {
             });
         }
 
-        this.createBlockBlobFromStreamAsync = function createBlockBlobFromStreamAsync(containerName, fileName, stream, size){
-            return this.blobService.createBlockBlobFromStreamAsync(containerName, fileName, stream, size).catch(err => {
+        this.createBlockBlobFromStreamAsync = function createBlockBlobFromStreamAsync(containerName, fileName, stream, size, options){
+            return this.blobService.createBlockBlobFromStreamAsync(containerName, fileName, stream, size, options).catch(err => {
                 throw new StorageException(err);
             });
         }
+
+        this.uploadFileAsBlockBlob = function uploadFile(containerName, filename, stream, size){
+            return this.blobService.createContainerIfNotExistsAsync(containerName)
+            /*
+                       .then(() => {
+                            return this.blobService.createBlockBlobFromStreamAsync(containerName, filename, stream, size, {});
+                       })
+*/
+                       .catch(err => {
+                            throw new StorageException(err);
+                       });
+
+
+        };
 
         this.getBlobService = function getBlobService() {
             return storage.createBlobService(this.connectionString);

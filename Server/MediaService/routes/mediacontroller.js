@@ -39,7 +39,14 @@ module.exports = function(config, logger){
             throw new ForbiddenException('Identity is not found.');
         }
 
-        yield *parseFileUploadRequest(req, res, errorHandler);
+        parseFileUploadRequestAsync(req)
+            .then(() => {
+                logger.get().debug({req : req}, 'Multipart file upload completed.');
+                res.status(200).json({});
+            })
+        .catch(err => {
+            errorHandler(new FileUploadException(err));
+        });
     }));
 
     router.delete('/', helpers.wrap(function *(req, res) {
@@ -48,57 +55,7 @@ module.exports = function(config, logger){
         res.status(200).json(result);
     }));
 
-    function *parseFileUploadRequest(req, res, errorHandler){
-
-        if (req.headers['content-length'] > totalFilesSizeLimit){
-            throw new FileUploadException({statusCode : 413});
-        }
-
-        var form = new multiparty.Form(multipartyOptions);
-
-        var totalByteCount = 0;
-
-        form.on('error', function(err) {
-            errorHandler(new FileUploadException(err));
-        });
-
-        form.on('part', wrapPartDataEventHandler(function *(part) {
-
-            if (part.filename){
-                logger.get().debug({req : req}, 'File ' + part.filename + ' received.');
-                totalByteCount += part.byteCount;
-
-                if (totalByteCount > totalFilesSizeLimit){
-                    form.emit('error', {statusCode : 413});
-                }
-
-                part.on('data', wrapStreamDataEventHandler(function *(chunk) {
-                    var size = part.byteCount - part.byteOffset;
-                    var name = part.filename;
-
-                    yield storageBlob.createContainerIfNotExistsAsync(req.params.id);
-
-                    yield storageBlob.createBlockBlobFromStreamAsync(req.params.id, name, chunk, size);
-                }));
-
-                part.on('error', function(err) {
-                    // forward part error to form error
-                    form.emit('error', err);
-                });                
-            }
-            else{
-                form.handleError(part);
-            }
-        }));
-
-        form.on('field', function(name, value) {
-            logger.get().debug({req : req}, 'Field ' + name + ' received.');
-        });
-
-        form.on('close', function() {
-            logger.get().debug({req : req}, 'Multipart Request completed.');
-            res.status(200).json({});
-        });
+    function parseFileUploadRequestAsync(req){
 
         /*
         form.parseAsync(req).spread((fields, files) => {
@@ -106,7 +63,7 @@ module.exports = function(config, logger){
             logger.get().debug({req : req, fileUploadResults : fileUploadResults},
                 'Uploaded files received.');
 
-            return fileUploadResults;
+            return fileUploadResults; 
         })
         .then(r => {
             res.status(200).json(r);
@@ -115,7 +72,99 @@ module.exports = function(config, logger){
             errorHandler(new FileUploadException(err));
         });
         */
-        yield form.parse(req);
+        if (req.headers['content-length'] > totalFilesSizeLimit){
+            reject({statusCode : 413});
+        }
+
+        return new Promise((resolve, reject) => {
+        var form = new multiparty.Form(multipartyOptions);
+        var totalByteCount = 0;
+
+        form.on('part', function(part) {
+
+            var buffers = {};
+
+            if (part.filename){
+                totalByteCount += part.byteCount;
+
+                if (totalByteCount > totalFilesSizeLimit){
+                    form.emit('error', {statusCode : 413});
+                }
+
+                logger.get().debug({req : req}, 'File ' + part.filename +  ' data stream received.');
+
+                /*
+                */
+                part.on('data', wrapStreamDataEventHandler(function *(chunk){
+                    //console.log('part.byteCount: ' + part.byteCount);
+                    //console.log('part.byteOffset: ' + part.byteOffset);
+                    //var size = part.byteCount - part.byteOffset;                    
+                    //console.log(util.inspect(chunk));
+                    //logger.get().debug({req : req}, 'File ' + part.filename +  ' data stream of size ' + size + ' received.');
+                    var name = part.filename;
+                    var size = chunk.length;
+
+                    console.log('data $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$: ' + part.filename);
+
+                    if (!buffers[part.filename]){
+                        buffers[part.filename] = [chunk];
+                    }
+                    else{
+                        buffers[part.filename].push(chunk);
+                    }
+
+                    /*
+                        .then(() => {
+                            return storageBlob.createBlockBlobFromStreamAsync(req.params.id, name, chunk, size, {});    
+                        })
+                        .catch(err => {
+                           form.emit('error', err);
+                        });
+                    */
+                }));
+
+                part.on('end', () => {
+                    if (buffers[part.filename]){
+                        var buffer = Buffer.concat(buffers[part.filename]); 
+                        var size = buffer.length;
+                        console.log('size of ' + part.filename + ' = ' + size);
+
+                        storageBlob.uploadFileAsBlockBlob(req.params.id, part.filename, buffer, size)
+                            .then(() => {
+                                delete buffers[part.filename];
+                                if (isEmptyObject(buffers)){
+                                    resolve();
+                                }                            
+                            })
+                            .catch(err => {
+                               form.emit('error', err);
+                            });
+                    }
+                });
+
+                part.on('error', err => {
+                    // forward part error to form error
+                    form.emit('error', err);
+                });   
+            }
+                
+            part.resume();             
+        });
+
+        form.on('field', function(name, value) {
+            logger.get().debug({req : req}, 'Field ' + name + ' received.');
+        });
+
+            form.on('error', function(err) {
+                reject(err);
+            });
+
+            form.parse(req);
+        });
+    }
+
+    function isEmptyObject(obj) {
+      return !Object.keys(obj).length;
     }
 
     function wrapStreamDataEventHandler(genFunc){
