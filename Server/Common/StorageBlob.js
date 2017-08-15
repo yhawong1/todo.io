@@ -37,11 +37,9 @@ module.exports = {
 
         this.uploadFileAsBlockBlob = function uploadFile(containerName, filename, stream, size){
             return this.blobService.createContainerIfNotExistsAsync(containerName)
-            /*
                        .then(() => {
                             return this.blobService.createBlockBlobFromStreamAsync(containerName, filename, stream, size, {});
                        })
-*/
                        .catch(err => {
                             throw new StorageException(err);
                        });

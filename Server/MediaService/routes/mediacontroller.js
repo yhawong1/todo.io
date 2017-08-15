@@ -73,90 +73,77 @@ module.exports = function(config, logger){
         });
         */
         if (req.headers['content-length'] > totalFilesSizeLimit){
-            reject({statusCode : 413});
+            throw new FileUploadException({statusCode : 413, message : 'Content is too big.'});
         }
 
         return new Promise((resolve, reject) => {
-        var form = new multiparty.Form(multipartyOptions);
-        var totalByteCount = 0;
+            var form = new multiparty.Form(multipartyOptions);
+            var totalByteCount = 0;
+            var done = false;
 
-        form.on('part', function(part) {
+            form.on('part', function(part) {
 
-            var buffers = {};
+                var buffers = {};
 
-            if (part.filename){
-                totalByteCount += part.byteCount;
+                if (part.filename){
+                    totalByteCount += part.byteCount;
 
-                if (totalByteCount > totalFilesSizeLimit){
-                    form.emit('error', {statusCode : 413});
+                    if (totalByteCount > totalFilesSizeLimit){
+                        form.emit('error', {statusCode : 413});
+                    }
+
+                    logger.get().debug({req : req}, 'File ' + part.filename +  ' data stream received.');
+
+                    part.on('data', chunk => {
+                        var name = part.filename;
+                        var size = chunk.length;
+
+                        if (!buffers[part.filename]){
+                            buffers[part.filename] = [chunk];
+                        }
+                        else{
+                            buffers[part.filename].push(chunk);
+                        }
+                    });
+
+                    part.on('end', () => {
+                        if (buffers[part.filename]){
+                            var buffer = Buffer.concat(buffers[part.filename]); 
+                            var size = buffer.length;
+                            console.log('size of ' + part.filename + ' = ' + size);
+
+                            storageBlob.uploadFileAsBlockBlob(req.params.id, part.filename, buffer, size)
+                                .then(() => {
+                                    delete buffers[part.filename];
+                                    if (done && isEmptyObject(buffers)){
+                                        resolve();
+                                    }                            
+                                })
+                                .catch(err => {
+                                   form.emit('error', err);
+                                });
+                        }
+                    });
+
+                    part.on('error', err => {
+                        // forward part error to form error
+                        form.emit('error', err);
+                    });   
                 }
+                    
+                part.resume();             
+            });
 
-                logger.get().debug({req : req}, 'File ' + part.filename +  ' data stream received.');
-
-                /*
-                */
-                part.on('data', wrapStreamDataEventHandler(function *(chunk){
-                    //console.log('part.byteCount: ' + part.byteCount);
-                    //console.log('part.byteOffset: ' + part.byteOffset);
-                    //var size = part.byteCount - part.byteOffset;                    
-                    //console.log(util.inspect(chunk));
-                    //logger.get().debug({req : req}, 'File ' + part.filename +  ' data stream of size ' + size + ' received.');
-                    var name = part.filename;
-                    var size = chunk.length;
-
-                    console.log('data $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$: ' + part.filename);
-
-                    if (!buffers[part.filename]){
-                        buffers[part.filename] = [chunk];
-                    }
-                    else{
-                        buffers[part.filename].push(chunk);
-                    }
-
-                    /*
-                        .then(() => {
-                            return storageBlob.createBlockBlobFromStreamAsync(req.params.id, name, chunk, size, {});    
-                        })
-                        .catch(err => {
-                           form.emit('error', err);
-                        });
-                    */
-                }));
-
-                part.on('end', () => {
-                    if (buffers[part.filename]){
-                        var buffer = Buffer.concat(buffers[part.filename]); 
-                        var size = buffer.length;
-                        console.log('size of ' + part.filename + ' = ' + size);
-
-                        storageBlob.uploadFileAsBlockBlob(req.params.id, part.filename, buffer, size)
-                            .then(() => {
-                                delete buffers[part.filename];
-                                if (isEmptyObject(buffers)){
-                                    resolve();
-                                }                            
-                            })
-                            .catch(err => {
-                               form.emit('error', err);
-                            });
-                    }
-                });
-
-                part.on('error', err => {
-                    // forward part error to form error
-                    form.emit('error', err);
-                });   
-            }
-                
-            part.resume();             
-        });
-
-        form.on('field', function(name, value) {
-            logger.get().debug({req : req}, 'Field ' + name + ' received.');
-        });
+            form.on('field', function(name, value) {
+                logger.get().debug({req : req}, 'Field ' + name + ' received.');
+            });
 
             form.on('error', function(err) {
                 reject(err);
+            });
+
+            form.on('close', () => {
+                done = true;
             });
 
             form.parse(req);
