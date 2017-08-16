@@ -46,9 +46,9 @@ module.exports = function(config, logger){
                 logger.get().debug({req : req}, 'Multipart file upload completed.');
                 res.status(200).json({});
             })
-        .catch(err => {
-            errorHandler(new FileUploadException(err));
-        });
+            .catch(fileUploadError => {
+                errorHandler(new FileUploadException(fileUploadError.error, fileUploadError.fileUploadedSuccessfully));
+            });
     }));
 
     router.delete('/', helpers.wrap(function *(req, res) {
@@ -67,7 +67,7 @@ module.exports = function(config, logger){
         return new Promise((resolve, reject) => {
             var form = new multiparty.Form(multipartyOptions);
             var done = false;
-            var filesUploadInflight = {};
+            var fileUploadedSuccessfully = [];
 
             form.on('part', function(part) {
 
@@ -79,33 +79,22 @@ module.exports = function(config, logger){
                         form.emit('error', {statusCode : 413});
                     }
                     */
-                    if (!filesUploadInflight[part.filename]){
-                        filesUploadInflight[part.filename] = part.filename;
-                    }
-
-                    logger.get().debug({req : req}, 'File ' + part.filename +  ' data stream received.');
-
                     var name = part.filename;
+
+                    logger.get().debug({req : req}, 'File ' + name +  ' data stream received.');
+
+                    part.on('end', () => {
+                        fileUploadedSuccessfully.push(name);
+                    });
+
+                    part.on('error', err => {
+                         // forward part error to form error
+                        form.emit('error', err);
+                    });   
 
                     var stream = blobService.createWriteStreamToBlockBlob(req.params.id, name);
 
                     part.pipe(stream);
-
-                    part.on('end', () => {
-                        if (filesUploadInflight[part.filename]){
-                            delete filesUploadInflight[part.filename];
-                        }
-
-                        if (isEmptyObject(filesUploadInflight)){
-                            resolve();
-                        }
-                    });
-
-                    part.on('error', err => {
-                        // forward part error to form error
-                        form.emit('error', err);
-                    });   
-
                 }
                     
                 part.resume();             
@@ -116,11 +105,11 @@ module.exports = function(config, logger){
             });
 
             form.on('error', err => {
-                reject(err);
+                reject({ error : err, fileUploadedSuccessfully : fileUploadedSuccessfully});
             });
 
             form.on('close', () => {
-                done = true;
+                resolve();
             });
 
             form.parse(req);
