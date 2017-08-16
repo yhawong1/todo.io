@@ -35,17 +35,31 @@ module.exports = {
             });
         }
 
-        this.uploadFileAsBlockBlob = function uploadFile(containerName, filename, stream, size){
+        this.createAppendBlobFromStreamAsync = function createAppendBlobFromStreamAsync(containerName, fileName, stream, size, options){
+            return this.blobService.createAppendBlobFromStreamAsync(containerName, fileName, stream, size, options).catch(err => {
+                throw new StorageException(err);
+            });
+        }
+
+        this.getWritableStreamToBlockBlobAsync = function getWritableStreamToBlockBlobAsync(containerName, blob){
             return this.blobService.createContainerIfNotExistsAsync(containerName)
-                       .then(() => {
-                            return this.blobService.createBlockBlobFromStreamAsync(containerName, filename, stream, size, {});
-                       })
-                       .catch(err => {
-                            throw new StorageException(err);
-                       });
+                .then(() => {
+                    return this.blobService.createWriteStreamToBlockBlobAsync(containerName, blob, {});
+                })
+                .catch(err => {
+                    throw new StorageException(err);
+                });
+        }
 
-
-        };
+        this.getWritableStreamToAppendBlobAsync = function getWritableStreamToAppendBlobAsync(containerName, blob){
+            return this.blobService.createContainerIfNotExistsAsync(containerName)
+                .then(() => {
+                    return this.blobService.createWriteStreamToNewAppendBlobAsync(containerName, blob, {});
+                })
+                .catch(err => {
+                    throw new StorageException(err);
+                }); 
+        }
 
         this.getBlobService = function getBlobService() {
             return storage.createBlobService(this.connectionString);

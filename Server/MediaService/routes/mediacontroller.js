@@ -16,9 +16,11 @@ module.exports = function(config, logger){
     var storageBlob = new StorageBlob(config.azureStorageBlobConnectionString);
     var headerNames = require('../../common/constants.json')['headerNames'];
     var Promise = require('bluebird');
-    var multiparty = Promise.promisifyAll(require('multiparty'), {multiArgs:true});
+    //var multiparty = Promise.promisifyAll(require('multiparty'), {multiArgs:true});
+    var multiparty = require('multiparty');
     var util = require('util');
-    var fs = Promise.promisifyAll(require('fs'));
+    var fs = require('fs');
+    var azureStorage = require('azure-storage')
 
     var totalFilesSizeLimit = 10 * 1024 * 1024;
     var totalFieldsSizeLimit = 1 * 1024 * 1024;
@@ -56,72 +58,46 @@ module.exports = function(config, logger){
     }));
 
     function parseFileUploadRequestAsync(req){
-
-        /*
-        form.parseAsync(req).spread((fields, files) => {
-            var fileUploadResults = { fields : fields, files : files};
-            logger.get().debug({req : req, fileUploadResults : fileUploadResults},
-                'Uploaded files received.');
-
-            return fileUploadResults; 
-        })
-        .then(r => {
-            res.status(200).json(r);
-        })
-        .catch(err => {
-            errorHandler(new FileUploadException(err));
-        });
-        */
         if (req.headers['content-length'] > totalFilesSizeLimit){
             throw new FileUploadException({statusCode : 413, message : 'Content is too big.'});
         }
 
+        var blobService = azureStorage.createBlobService(config.azureStorageBlobConnectionString);
+
         return new Promise((resolve, reject) => {
             var form = new multiparty.Form(multipartyOptions);
-            var totalByteCount = 0;
             var done = false;
+            var filesUploadInflight = {};
 
             form.on('part', function(part) {
 
-                var buffers = {};
-
                 if (part.filename){
+                    /*
                     totalByteCount += part.byteCount;
 
                     if (totalByteCount > totalFilesSizeLimit){
                         form.emit('error', {statusCode : 413});
                     }
+                    */
+                    if (!filesUploadInflight[part.filename]){
+                        filesUploadInflight[part.filename] = part.filename;
+                    }
 
                     logger.get().debug({req : req}, 'File ' + part.filename +  ' data stream received.');
 
-                    part.on('data', chunk => {
-                        var name = part.filename;
-                        var size = chunk.length;
+                    var name = part.filename;
 
-                        if (!buffers[part.filename]){
-                            buffers[part.filename] = [chunk];
-                        }
-                        else{
-                            buffers[part.filename].push(chunk);
-                        }
-                    });
+                    var stream = blobService.createWriteStreamToBlockBlob(req.params.id, name);
+
+                    part.pipe(stream);
 
                     part.on('end', () => {
-                        if (buffers[part.filename]){
-                            var buffer = Buffer.concat(buffers[part.filename]); 
-                            var size = buffer.length;
-                            console.log('size of ' + part.filename + ' = ' + size);
+                        if (filesUploadInflight[part.filename]){
+                            delete filesUploadInflight[part.filename];
+                        }
 
-                            storageBlob.uploadFileAsBlockBlob(req.params.id, part.filename, buffer, size)
-                                .then(() => {
-                                    delete buffers[part.filename];
-                                    if (done && isEmptyObject(buffers)){
-                                        resolve();
-                                    }                            
-                                })
-                                .catch(err => {
-                                   form.emit('error', err);
-                                });
+                        if (isEmptyObject(filesUploadInflight)){
+                            resolve();
                         }
                     });
 
@@ -129,16 +105,17 @@ module.exports = function(config, logger){
                         // forward part error to form error
                         form.emit('error', err);
                     });   
+
                 }
                     
                 part.resume();             
             });
 
-            form.on('field', function(name, value) {
+            form.on('field', (name, value) => {
                 logger.get().debug({req : req}, 'Field ' + name + ' received.');
             });
 
-            form.on('error', function(err) {
+            form.on('error', err => {
                 reject(err);
             });
 
