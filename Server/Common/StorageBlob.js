@@ -17,6 +17,9 @@ module.exports = {
             });
         }
 
+        this.getBlobToStream = function getBlobToStream(containerName, blobName){
+
+        }
 
         this.persistDataToWriteStreamAsync = function persistDataToWriteStreamAsync(containerName, blob, options){     
             return new Promise((resolve, reject) => {

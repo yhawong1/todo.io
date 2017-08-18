@@ -25,6 +25,17 @@ module.exports = function(config, logger){
     var totalFieldsSizeLimit = 1 * 1024 * 1024;
     var multipartyOptions = { 'encoding' : 'binary', 'maxFieldsSize' : totalFieldsSizeLimit };
 
+    router.get('/:type/:id', helpers.wrap(function *(req, res, errorHandler) {
+        logger.get().debug({req : req}, 'Processing file get request...');
+        var identity = req.headers[headerNames.identityHeaderName];
+
+        if (!identity){
+            throw new ForbiddenException('Identity is not found.');
+        }
+
+        res.status(200).json({});
+    }));
+
     router.post('/:type/:id', helpers.wrap(function *(req, res, errorHandler) {
 
         logger.get().debug({req : req}, 'Processing file upload request...');
@@ -59,6 +70,7 @@ module.exports = function(config, logger){
         return new Promise((resolve, reject) => {
             var form = new multiparty.Form(multipartyOptions);
             var fileUploadedSuccessfully = [];
+            var filesBeingUploaded = {};
             var containerName = (req.params.type + req.params.id).toLowerCase();
 
             logger.get().debug({req : req}, 'Start uploading files to container: ' + containerName);
@@ -81,7 +93,11 @@ module.exports = function(config, logger){
                     part.on('error', err => {
                          // forward part error to form error
                         form.emit('error', err);
-                    });   
+                    });
+
+                    if (!filesBeingUploaded[key]){
+                        filesBeingUploaded[key] = key;
+                    }
 
                     storageBlob.persistDataToWriteStreamAsync(
                         containerName, 
@@ -95,20 +111,30 @@ module.exports = function(config, logger){
                             }
                         })
                         .then(stream => {
-                            stream.on('end', () => {
+                            stream.on('close', () => {
                                 if (isReplace){
                                     logger.get().debug({req : req}, util.format('File: %s, Name: %s, Blob: %s replaced successfully.', part.filename, part.name, blobName));
                                 }
                                 else{
                                     logger.get().debug({req : req}, util.format('File: %s, Name: %s, Blob: %s uploaded successfully.', part.filename, part.name, blobName));
                                 }
+
                                 fileUploadedSuccessfully.push(
                                 { 
                                     containerName : containerName,
                                     blobName : blobName,
                                     name : name,
+                                    isReplace : isReplace,
                                     originalFilename: part.filename
                                 });
+
+                                if (filesBeingUploaded[key]){
+                                    delete filesBeingUploaded[key];
+                                }
+
+                                if (done && isEmptyObject(filesBeingUploaded)){
+                                    resolve(fileUploadedSuccessfully);
+                                }
 
                                 part.resume();
                             });
@@ -137,11 +163,23 @@ module.exports = function(config, logger){
             });
 
             form.on('close', () => {
-                resolve({fileUploadedSuccessfully : fileUploadedSuccessfully});
+                done = true;
+                if (isEmptyObject(filesBeingUploaded)){
+                    resolve({fileUploadedSuccessfully : fileUploadedSuccessfully});
+                }
             });
 
             form.parse(req);
         });
+    }
+
+    function isEmptyObject(obj) {
+        for (var key in obj) {
+            if (Object.prototype.hasOwnProperty.call(obj, key)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     return router;
