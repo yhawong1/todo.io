@@ -31,7 +31,8 @@
         "versionHeaderName" : "version",
         "identityHeaderName" : "auth-identity",
         "activityidHeaderName" : "activityid",
-        "contenttypeHeaderName" : "content-type"
+        "contenttypeHeaderName" : "content-type",
+        "blobnameHeaderName" : "blobname"
     },
 
     "nodeLinksUpdateStoredProcName" : "nodeLinksUpdateStoredProc",

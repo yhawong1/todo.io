@@ -22,22 +22,16 @@ module.exports = {
             return new Promise((resolve, reject) => {
                 this.createContainerIfNotExistsAsync(containerName)
                     .then(result => {
-                        if (options === 'undefined'){
+                        if (options === undefined){
                             options = {}; 
                         }
 
-                        try{  
-                            var stream = this.getBlobService().createWriteStreamToBlockBlob(containerName, blob, options, (error, result, response) =>{
-                                if (error){
-                                    reject(new StorageException(error));
-                                }
-                            });
-                            resolve(stream);
-                        }
-                        catch(err){
-                            reject(new StorageException(err));
-                        }
-
+                        var stream = this.getBlobService().createWriteStreamToBlockBlob(containerName, blob, options, (error, result, response) =>{
+                            if (error){
+                                reject(new StorageException(error));
+                            }
+                        });
+                        resolve(stream);
                     })
                     .catch(err => {
                         reject(new StorageException(err));

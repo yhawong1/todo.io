@@ -28,12 +28,6 @@ module.exports = function(config, logger){
     router.post('/:type/:id', helpers.wrap(function *(req, res, errorHandler) {
 
         logger.get().debug({req : req}, 'Processing file upload request...');
-/*
-        var result = yield storageBlob.createContainerIfNotExistsAsync('test');
-
-        result = yield storageBlob.createAppendBlobFromLocalFileAsync('test', 'testblob', 'c:/a/GetMedia (8).jpg');
-        var created = result.created;
-*/
         var identity = req.headers[headerNames.identityHeaderName];
 
         if (!identity){
@@ -51,6 +45,7 @@ module.exports = function(config, logger){
     }));
 
     router.delete('/', helpers.wrap(function *(req, res) {
+        // TODO:
         var result = yield storageBlob.createContainerIfNotExistsAsync('test');
 
         res.status(200).json(result);
@@ -67,13 +62,21 @@ module.exports = function(config, logger){
             var containerName = (req.params.type + req.params.id).toLowerCase();
 
             logger.get().debug({req : req}, 'Start uploading files to container: ' + containerName);
+            var done = false;
 
             form.on('part', function(part) {
                 if (part.filename){
-                    var blobName = uuid.v4();
-                    var name = part.name;
+                    var blobName = part.headers[headerNames.blobnameHeaderName] || uuid.v4();
+                    var isReplace = part.headers[headerNames.blobnameHeaderName] !== undefined;
+                    var key = part.name + '_' + part.filename;
+                    var name = part.name;                    
 
-                    logger.get().debug({req : req}, 'File ' + blobName +  ' data stream received.');
+                    if (isReplace){
+                        logger.get().debug({req : req}, util.format('File: %s, Name: %s received. Blob %s already exists and will be replaced.', part.filename, part.name, blobName));
+                    }
+                    else{
+                        logger.get().debug({req : req}, util.format('File: %s, Name: %s received. It will be uploaded as blob %s.', part.filename, part.name, blobName));
+                    }
 
                     part.on('error', err => {
                          // forward part error to form error
@@ -87,12 +90,18 @@ module.exports = function(config, logger){
                             contentSettings: {
                                 contentType: part.headers[headerNames.contenttypeHeaderName]
                             },
-                            metadata : [ {
+                            metadata : {
                                 'originalFilename' : part.filename
-                            }]
+                            }
                         })
                         .then(stream => {
                             stream.on('end', () => {
+                                if (isReplace){
+                                    logger.get().debug({req : req}, util.format('File: %s, Name: %s, Blob: %s replaced successfully.', part.filename, part.name, blobName));
+                                }
+                                else{
+                                    logger.get().debug({req : req}, util.format('File: %s, Name: %s, Blob: %s uploaded successfully.', part.filename, part.name, blobName));
+                                }
                                 fileUploadedSuccessfully.push(
                                 { 
                                     containerName : containerName,
@@ -100,6 +109,7 @@ module.exports = function(config, logger){
                                     name : name,
                                     originalFilename: part.filename
                                 });
+
                                 part.resume();
                             });
 
@@ -127,7 +137,7 @@ module.exports = function(config, logger){
             });
 
             form.on('close', () => {
-                //resolve({fileUploadedSuccessfully : fileUploadedSuccessfully});
+                resolve({fileUploadedSuccessfully : fileUploadedSuccessfully});
             });
 
             form.parse(req);
