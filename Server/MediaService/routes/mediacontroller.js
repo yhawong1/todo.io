@@ -20,13 +20,12 @@ module.exports = function(config, logger){
     var multiparty = require('multiparty');
     var util = require('util');
     var fs = require('fs');
-    var azureStorage = require('azure-storage')
 
-    var totalFilesSizeLimit = 10 * 1024 * 1024;
+    var totalFilesSizeLimit = 30 * 1024 * 1024;
     var totalFieldsSizeLimit = 1 * 1024 * 1024;
     var multipartyOptions = { 'encoding' : 'binary', 'maxFieldsSize' : totalFieldsSizeLimit };
 
-    router.post('/:id', helpers.wrap(function *(req, res, errorHandler) {
+    router.post('/:type/:id', helpers.wrap(function *(req, res, errorHandler) {
 
         logger.get().debug({req : req}, 'Processing file upload request...');
 /*
@@ -41,10 +40,10 @@ module.exports = function(config, logger){
             throw new ForbiddenException('Identity is not found.');
         }
 
-        parseFileUploadRequestAsync(req)
-            .then(() => {
+        processFileUploadRequestAsync(req)
+            .then((fileUploadResult) => {
                 logger.get().debug({req : req}, 'Multipart file upload completed.');
-                res.status(200).json({});
+                res.status(200).json(fileUploadResult);
             })
             .catch(fileUploadError => {
                 errorHandler(new FileUploadException(fileUploadError.error, fileUploadError.fileUploadedSuccessfully));
@@ -57,34 +56,25 @@ module.exports = function(config, logger){
         res.status(200).json(result);
     }));
 
-    function parseFileUploadRequestAsync(req){
+    function processFileUploadRequestAsync(req){
         if (req.headers['content-length'] > totalFilesSizeLimit){
             throw new FileUploadException({statusCode : 413, message : 'Content is too big.'});
         }
 
-        var blobService = azureStorage.createBlobService(config.azureStorageBlobConnectionString);
-
         return new Promise((resolve, reject) => {
             var form = new multiparty.Form(multipartyOptions);
-            var done = false;
             var fileUploadedSuccessfully = [];
 
             form.on('part', function(part) {
-
                 if (part.filename){
-                    /*
-                    totalByteCount += part.byteCount;
+                    var blobName = part.filename;
+                    var name = part.name;
+                    var containerName = req.params.type + req.params.id;
 
-                    if (totalByteCount > totalFilesSizeLimit){
-                        form.emit('error', {statusCode : 413});
-                    }
-                    */
-                    var name = part.filename;
+                    logger.get().debug({req : req}, 'File ' + blobName +  ' data stream received. Data size: ' + part.byteCount);
 
-                    logger.get().debug({req : req}, 'File ' + name +  ' data stream received.');
-
-                    part.on('end', () => {
-                        fileUploadedSuccessfully.push(name);
+                    part.on('end', () => {                        
+                        fileUploadedSuccessfully.push({ blobName : blobName, name : name});
                     });
 
                     part.on('error', err => {
@@ -92,16 +82,22 @@ module.exports = function(config, logger){
                         form.emit('error', err);
                     });   
 
-                    var stream = blobService.createWriteStreamToBlockBlob(req.params.id, name);
-
-                    part.pipe(stream);
+                    storageBlob.createWriteStreamToBlockBlobAsync(containerName, blobName)
+                        .then(stream => {
+                            part.pipe(stream);
+                            part.resume();
+                        })
+                        .catch(err => {
+                            part.emit('error', err);
+                        });
                 }
-                    
-                part.resume();             
+                else{
+                    part.resume();
+                }                    
             });
 
             form.on('field', (name, value) => {
-                logger.get().debug({req : req}, 'Field ' + name + ' received.');
+                logger.get().debug({req : req}, 'Field (' + name + ', ' + value + ') received.');
             });
 
             form.on('error', err => {
@@ -109,30 +105,12 @@ module.exports = function(config, logger){
             });
 
             form.on('close', () => {
-                resolve();
+                resolve({fileUploadedSuccessfully : fileUploadedSuccessfully});
             });
 
             form.parse(req);
         });
     }
-
-    function isEmptyObject(obj) {
-      return !Object.keys(obj).length;
-    }
-
-    function wrapStreamDataEventHandler(genFunc){
-        var cr = Promise.coroutine(genFunc); 
-        return function (chunk) {
-            cr(chunk);
-        }
-    }    
-
-    function wrapPartDataEventHandler(genFunc){
-        var cr = Promise.coroutine(genFunc); 
-        return function (part) {
-            cr(part);
-        }
-    }    
 
     return router;
 }

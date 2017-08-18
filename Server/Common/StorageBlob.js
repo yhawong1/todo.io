@@ -61,6 +61,30 @@ module.exports = {
                 }); 
         }
 
+        this.createWriteStreamToBlockBlobAsync = function createWriteStreamToBlockBlobAsync(containerName, blob){     
+            return new Promise((resolve, reject) => {
+                this.createContainerIfNotExistsAsync(containerName)
+                    .then(result => {
+                        var stream = this.blobService.createWriteStreamToBlockBlob(containerName, blob);
+                        resolve(stream);
+                    })
+                    .catch(err => {
+                        reject(new StorageException(err));
+                    })
+            });    
+        }
+
+        this.createWriteStreamToBlockBlob = function createWriteStreamToBlockBlob(containerName, blob){            
+            this.blobService.createContainerIfNotExists(containerName, function(error, result, response){
+                if (!error){
+                    return this.blobService.createWriteStreamToBlockBlob(containerName, blob);
+                }
+                else{
+                    
+                }
+            });
+        }
+
         this.getBlobService = function getBlobService() {
             return storage.createBlobService(this.connectionString);
         }
