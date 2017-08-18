@@ -64,14 +64,16 @@ module.exports = function(config, logger){
         return new Promise((resolve, reject) => {
             var form = new multiparty.Form(multipartyOptions);
             var fileUploadedSuccessfully = [];
+            var containerName = (req.params.type + req.params.id).toLowerCase();
+
+            logger.get().debug({req : req}, 'Start uploading files to container: ' + containerName);
 
             form.on('part', function(part) {
                 if (part.filename){
                     var blobName = part.filename;
                     var name = part.name;
-                    var containerName = req.params.type + req.params.id;
 
-                    logger.get().debug({req : req}, 'File ' + blobName +  ' data stream received. Data size: ' + part.byteCount);
+                    logger.get().debug({req : req}, 'File ' + blobName +  ' data stream received');
 
                     part.on('end', () => {                        
                         fileUploadedSuccessfully.push({ blobName : blobName, name : name});
@@ -82,7 +84,7 @@ module.exports = function(config, logger){
                         form.emit('error', err);
                     });   
 
-                    storageBlob.createWriteStreamToBlockBlobAsync(containerName, blobName)
+                    storageBlob.persistDataToWriteStreamAsync(containerName, blobName)
                         .then(stream => {
                             part.pipe(stream);
                             part.resume();
