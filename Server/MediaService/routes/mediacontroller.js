@@ -16,10 +16,10 @@ module.exports = function(config, logger){
     var storageBlob = new StorageBlob(config.azureStorageBlobConnectionString);
     var headerNames = require('../../common/constants.json')['headerNames'];
     var Promise = require('bluebird');
-    //var multiparty = Promise.promisifyAll(require('multiparty'), {multiArgs:true});
     var multiparty = require('multiparty');
     var util = require('util');
     var fs = require('fs');
+    var uuid = require('node-uuid');
 
     var totalFilesSizeLimit = 30 * 1024 * 1024;
     var totalFieldsSizeLimit = 1 * 1024 * 1024;
@@ -70,24 +70,44 @@ module.exports = function(config, logger){
 
             form.on('part', function(part) {
                 if (part.filename){
-                    var blobName = part.filename;
+                    var blobName = uuid.v4();
                     var name = part.name;
 
-                    logger.get().debug({req : req}, 'File ' + blobName +  ' data stream received');
-
-                    part.on('end', () => {                        
-                        fileUploadedSuccessfully.push({ blobName : blobName, name : name});
-                    });
+                    logger.get().debug({req : req}, 'File ' + blobName +  ' data stream received.');
 
                     part.on('error', err => {
                          // forward part error to form error
                         form.emit('error', err);
                     });   
 
-                    storageBlob.persistDataToWriteStreamAsync(containerName, blobName)
+                    storageBlob.persistDataToWriteStreamAsync(
+                        containerName, 
+                        blobName, 
+                        {
+                            contentSettings: {
+                                contentType: part.headers[headerNames.contenttypeHeaderName]
+                            },
+                            metadata : [ {
+                                'originalFilename' : part.filename
+                            }]
+                        })
                         .then(stream => {
+                            stream.on('end', () => {
+                                fileUploadedSuccessfully.push(
+                                { 
+                                    containerName : containerName,
+                                    blobName : blobName,
+                                    name : name,
+                                    originalFilename: part.filename
+                                });
+                                part.resume();
+                            });
+
+                            stream.on('error', err => {
+                                part.emit('error', err);
+                            });
+
                             part.pipe(stream);
-                            part.resume();
                         })
                         .catch(err => {
                             part.emit('error', err);
@@ -107,7 +127,7 @@ module.exports = function(config, logger){
             });
 
             form.on('close', () => {
-                resolve({fileUploadedSuccessfully : fileUploadedSuccessfully});
+                //resolve({fileUploadedSuccessfully : fileUploadedSuccessfully});
             });
 
             form.parse(req);

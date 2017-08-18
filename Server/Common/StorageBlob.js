@@ -18,16 +18,26 @@ module.exports = {
         }
 
 
-        this.persistDataToWriteStreamAsync = function persistDataToWriteStreamAsync(containerName, blob){     
+        this.persistDataToWriteStreamAsync = function persistDataToWriteStreamAsync(containerName, blob, options){     
             return new Promise((resolve, reject) => {
                 this.createContainerIfNotExistsAsync(containerName)
                     .then(result => {
-                        var stream = this.getBlobService().createWriteStreamToBlockBlob(containerName, blob, (error, result, response) =>{
-                            if (error){
-                                reject(new StorageException(error));
-                            }
-                        });
-                        resolve(stream);
+                        if (options === 'undefined'){
+                            options = {}; 
+                        }
+
+                        try{  
+                            var stream = this.getBlobService().createWriteStreamToBlockBlob(containerName, blob, options, (error, result, response) =>{
+                                if (error){
+                                    reject(new StorageException(error));
+                                }
+                            });
+                            resolve(stream);
+                        }
+                        catch(err){
+                            reject(new StorageException(err));
+                        }
+
                     })
                     .catch(err => {
                         reject(new StorageException(err));
