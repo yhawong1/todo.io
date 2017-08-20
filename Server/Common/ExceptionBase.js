@@ -40,7 +40,7 @@ module.exports = class ExceptionBase extends Error{
         };
 
         if (that.innerException){
-            if (that.innerException.isExceptionBase === true){
+            if (that.innerException.isExceptionBase === true){                
                 returnedJson.innerException = that.innerException;        
             }
             else{

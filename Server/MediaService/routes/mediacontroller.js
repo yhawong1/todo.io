@@ -11,6 +11,8 @@ module.exports = function(config, logger){
     var ForbiddenException = require('../../common/forbiddenexception.js');
     var BadRequestException = require('../../common/badrequestexception.js');
     var FileUploadException = require('../../common/fileuploadexception.js');
+    var FileDownloadException = require('../../common/filedownloadexception.js');
+    var FileDeleteException = require('../../common/filedeleteexception.js');
     var errorcode = require('../../common/errorcode.json');
     var StorageBlob = require('../../common/StorageBlob.js').StorageBlob;
     var storageBlob = new StorageBlob(config.azureStorageBlobConnectionString);
@@ -21,11 +23,37 @@ module.exports = function(config, logger){
     var fs = require('fs');
     var uuid = require('node-uuid');
 
-    var totalFilesSizeLimit = 30 * 1024 * 1024;
-    var totalFieldsSizeLimit = 1 * 1024 * 1024;
+    const totalFilesSizeLimit = 30 * 1024 * 1024;
+    const totalFieldsSizeLimit = 1 * 1024 * 1024;
+    const blockSize = 64 * 1024;
     var multipartyOptions = { 'encoding' : 'binary', 'maxFieldsSize' : totalFieldsSizeLimit };
 
-    router.get('/:type/:id', helpers.wrap(function *(req, res, errorHandler) {
+    router.head('/:type/:id/:blobName', helpers.wrap(function *(req, res, errorHandler) {
+        var containerName = getContainerName(req);
+        var blobName = req.params.blobName;
+
+        logger.get().debug({req : req}, 'Processing file head request...');
+        var identity = req.headers[headerNames.identityHeaderName];
+
+        if (!identity){
+            throw new ForbiddenException('Identity is not found.');
+        }
+
+        storageBlob.getBlobPropertiesAsync(containerName, blobName)
+            .then(properties => {
+                var contentLength = properties.contentLength;
+                logger.get().debug({req : req}, util.format('Size of blob %s in container %s: %d', blobName, containerName, contentLength));
+                res.set(headerNames.contentlengthHeaderName, contentLength);
+
+                // HEAD request doesn't return any body
+                res.status(200).end();
+            })
+            .catch(err => {
+                errorHandler(new FileDownloadException(err));
+            });
+    }));
+
+    router.get('/:type/:id/:blobName', helpers.wrap(function *(req, res, errorHandler) {
         logger.get().debug({req : req}, 'Processing file get request...');
         var identity = req.headers[headerNames.identityHeaderName];
 
@@ -33,11 +61,20 @@ module.exports = function(config, logger){
             throw new ForbiddenException('Identity is not found.');
         }
 
-        res.status(200).json({});
+        var rangeStart = parseInt(req.headers[headerNames.rangestartHeaderName], 10);
+        var rangeEnd = parseInt(req.headers[headerNames.rangeendHeaderName], 10);
+
+        if (rangeEnd - rangeStart > blockSize){
+            throw new FileDownloadException({statusCode : 413, message: util.format('Data requested too large. Maximum block size is %d.', blockSize) })
+        }
+
+        processFileGetRequestAsync(req, res, rangeStart, rangeEnd)
+            .catch(err =>{
+                errorHandler(new FileDownloadException(err));                
+            })
     }));
 
     router.post('/:type/:id', helpers.wrap(function *(req, res, errorHandler) {
-
         logger.get().debug({req : req}, 'Processing file upload request...');
         var identity = req.headers[headerNames.identityHeaderName];
 
@@ -48,19 +85,60 @@ module.exports = function(config, logger){
         processFileUploadRequestAsync(req)
             .then((fileUploadResult) => {
                 logger.get().debug({req : req}, 'Multipart file upload completed.');
-                res.status(200).json(fileUploadResult);
+                res.status(201).json(fileUploadResult);
             })
             .catch(fileUploadError => {
                 errorHandler(new FileUploadException(fileUploadError.error, fileUploadError.fileUploadedSuccessfully));
             });
     }));
 
-    router.delete('/', helpers.wrap(function *(req, res) {
-        // TODO:
-        var result = yield storageBlob.createContainerIfNotExistsAsync('test');
+    router.delete('/:type/:id/:blobName', helpers.wrap(function *(req, res, errorHandler) {
+        logger.get().debug({req : req}, 'Processing file delete request...');
+        var identity = req.headers[headerNames.identityHeaderName];
 
-        res.status(200).json(result);
+        if (!identity){
+            throw new ForbiddenException('Identity is not found.');
+        }
+
+        var containerName = getContainerName(req);
+        var blobName = req.params.blobName;
+
+        storageBlob.deleteBlobAsync(containerName, blobName)
+            .then(response => {
+                logger.get().debug({req : req}, util.format('File at containerName %s blob %s deleted successfully', containerName, blobName));
+                res.status(200).json(
+                    {
+                        containerName : containerName,
+                        blobName : blobName,
+                    });
+            })
+            .catch(err => {
+                errorHandler(new FileDeleteException(err));
+            });
     }));
+
+    function processFileGetRequestAsync(req, res, rangeStart, rangeEnd){
+        var containerName = getContainerName(req);
+        var blobName = req.params.blobName;
+
+        return new Promise((resolve, reject) => {
+
+            logger.get().debug({req : req}, util.format('Start downloading file from container %s blob %s', containerName, blobName));
+
+            res.on('error', err => {
+                reject(err);
+            });
+
+            storageBlob.writePartialBlobToStreamAsync(containerName, blobName, res, rangeStart, rangeEnd)
+                .then(() => {
+                    logger.get().debug({req : req}, util.format('File downloading completed from container %s blob %s', containerName, blobName));
+                    resolve();
+                })  
+                .catch(err => {
+                    reject(err);
+                });
+        });
+    }
 
     function processFileUploadRequestAsync(req){
         if (req.headers['content-length'] > totalFilesSizeLimit){
@@ -71,7 +149,7 @@ module.exports = function(config, logger){
             var form = new multiparty.Form(multipartyOptions);
             var fileUploadedSuccessfully = [];
             var filesBeingUploaded = {};
-            var containerName = (req.params.type + req.params.id).toLowerCase();
+            var containerName = getContainerName(req);
 
             logger.get().debug({req : req}, 'Start uploading files to container: ' + containerName);
             var done = false;
@@ -108,10 +186,11 @@ module.exports = function(config, logger){
                             },
                             metadata : {
                                 'originalFilename' : part.filename
-                            }
+                            },
+                            blockSize : blockSize
                         })
                         .then(stream => {
-                            stream.on('close', () => {
+                            stream.on('finish', () => {
                                 if (isReplace){
                                     logger.get().debug({req : req}, util.format('File: %s, Name: %s, Blob: %s replaced successfully.', part.filename, part.name, blobName));
                                 }
@@ -171,6 +250,10 @@ module.exports = function(config, logger){
 
             form.parse(req);
         });
+    }
+
+    function getContainerName(req){
+        return (req.params.type + req.params.id).toLowerCase();
     }
 
     function isEmptyObject(obj) {

@@ -6,6 +6,6 @@ var ExceptionBase = require('./exceptionbase.js');
 module.exports = class FileUploadException extends ExceptionBase{  
     constructor(error, filesUploadedSuccessfully){
         var httpcode = error.statusCode || 400;
-        super(error.message, 'FileUploadException', errorcodes.GenericStorageException, httpcode, errorcodes.GenericStorageException);
+        super(error.message, 'FileUploadException', errorcodes.GenericFileUploadException, httpcode, errorcodes.GenericFileUploadException);
     }
 }

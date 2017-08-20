@@ -40,5 +40,8 @@
     "GenericInternalServerException" : "GenericInternalServerException" ,
     "GenericDatabaseException" : "GenericDatabaseException",
     "GenericStorageException" : "GenericStorageException",
-    "GenericForbiddenException" : "GenericForbiddenException"
+    "GenericForbiddenException" : "GenericForbiddenException",
+    "GenericFileUploadException" : "GenericFileUploadException",
+    "GenericFileDownloadException" : "GenericFileDownloadException",
+    "GenericFileDeleteException" : "GenericFileDeleteException"
 }

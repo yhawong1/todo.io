@@ -32,7 +32,11 @@
         "identityHeaderName" : "auth-identity",
         "activityidHeaderName" : "activityid",
         "contenttypeHeaderName" : "content-type",
-        "blobnameHeaderName" : "blobname"
+        "contentlengthHeaderName" : "content-length",
+        "contentrangeHeaderName" : "content-range",
+        "blobnameHeaderName" : "blobname",
+        "rangestartHeaderName" : "range-start",
+        "rangeendHeaderName" : "range-end"
     },
 
     "nodeLinksUpdateStoredProcName" : "nodeLinksUpdateStoredProc",
