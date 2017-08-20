@@ -26,9 +26,9 @@ module.exports = {
                         rangeStart : startPos,
                         rangeEnd : endPos
                     }, 
-                    (err, blob) =>{
-                        if (err){
-                            reject(err);
+                    (error, blob) =>{
+                        if (error){
+                            reject(new StorageException(error));
                         }
                         else{
                             resolve(blob);
@@ -61,9 +61,9 @@ module.exports = {
                         rangeStart : rangeStart,
                         rangeEnd : rangeEnd
                     }, 
-                    (err, blob) =>{
-                        if (err){
-                            reject(err);
+                    (error, blob) =>{
+                        if (error){
+                            reject(new StorageException(error));
                         }
                         else{
                             resolve(blob);
@@ -104,7 +104,6 @@ module.exports = {
                 lastChunk = true;
             }
 
-            console.log('[startPos, endPos]=[' + startPos + ',' + endPos + ']');
             this.getBlobService().getBlobToStream(
                 containerName,
                 blobName,
@@ -134,9 +133,9 @@ module.exports = {
 
         this.deleteBlobAsync = function deleteBlobAsync(containerName, blobName){
             return new Promise((resolve, reject) => {
-                this.getBlobService().deleteBlob(containerName, blobName, (err, response) => {
-                    if (err){
-                        reject(new StorageException(err));
+                this.getBlobService().deleteBlob(containerName, blobName, (error, response) => {
+                    if (error){
+                        reject(new StorageException(error));
                     }
                     else{
                         resolve(response);
@@ -160,8 +159,8 @@ module.exports = {
                         });
                         resolve(stream);
                     })
-                    .catch(err => {
-                        reject(new StorageException(err));
+                    .catch(error => {
+                        reject(new StorageException(error));
                     })
             });    
         }
