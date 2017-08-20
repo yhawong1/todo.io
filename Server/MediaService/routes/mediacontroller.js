@@ -74,6 +74,24 @@ module.exports = function(config, logger){
             })
     }));
 
+    router.put('/:type/:id', helpers.wrap(function *(req, res, errorHandler) {
+        logger.get().debug({req : req}, 'Processing file upload request...');
+        var identity = req.headers[headerNames.identityHeaderName];
+
+        if (!identity){
+            throw new ForbiddenException('Identity is not found.');
+        }
+
+        processFileUploadRequestAsync(req)
+            .then((fileUploadResult) => {
+                logger.get().debug({req : req}, 'Multipart file upload completed.');
+                res.status(201).json(fileUploadResult);
+            })
+            .catch(fileUploadError => {
+                errorHandler(new FileUploadException(fileUploadError.error, fileUploadError.fileUploadedSuccessfully));
+            });
+    }));
+
     router.post('/:type/:id', helpers.wrap(function *(req, res, errorHandler) {
         logger.get().debug({req : req}, 'Processing file upload request...');
         var identity = req.headers[headerNames.identityHeaderName];
