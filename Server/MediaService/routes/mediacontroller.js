@@ -156,7 +156,7 @@ module.exports = function(config, logger){
 
             form.on('part', function(part) {
                 if (part.filename){
-                    var blobName = part.headers[headerNames.blobnameHeaderName] || uuid.v4();
+                    var blobName = part.headers[headerNames.blobnameHeaderName] || generateBlobName();
                     var isReplace = part.headers[headerNames.blobnameHeaderName] !== undefined;
                     var key = part.name + '_' + part.filename;
                     var name = part.name;                    
@@ -254,6 +254,10 @@ module.exports = function(config, logger){
 
     function getContainerName(req){
         return (req.params.type + req.params.id).toLowerCase();
+    }
+
+    function generateBlobName(){
+        return uuid.v4() + new Date().toISOString();
     }
 
     function isEmptyObject(obj) {
