@@ -36,7 +36,7 @@ module.exports = function(config, logger){
         var identity = req.headers[headerNames.identityHeaderName];
 
         if (!identity){
-            throw new ForbiddenException('Identity is not found.');
+            throw new ForbiddenException('Identity not found.', errorcode.IdentityNotFound);
         }
 
         storageBlob.getBlobPropertiesAsync(containerName, blobName)
@@ -58,7 +58,7 @@ module.exports = function(config, logger){
         var identity = req.headers[headerNames.identityHeaderName];
 
         if (!identity){
-            throw new ForbiddenException('Identity is not found.');
+            throw new ForbiddenException('Identity not found.', errorcode.IdentityNotFound);
         }
 
         var rangeStart = parseInt(req.headers[headerNames.rangestartHeaderName], 10);

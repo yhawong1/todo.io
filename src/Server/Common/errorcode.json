@@ -30,7 +30,10 @@
     "TextEmailBodyNotFoundInBody" : "textEmailBodyNotFoundInBody",
 
     "SendEmailError" : "SendEmailError",
+    "InvalidSendMailAction" : "InvalidSendMailBody",
     "InvalidSendMailBody" : "InvalidSendMailBody",
+
+    "IdentityNotFound" : "IdentityNotFound",
 
     "VersionNotFoundInHeader" : "VersionNotFoundInHeader",
     "GenericUnauthorizedException" : "GenericUnauthorizedException",

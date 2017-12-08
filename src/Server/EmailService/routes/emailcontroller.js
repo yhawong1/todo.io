@@ -25,14 +25,14 @@ module.exports = function(config, logger){
             var textEmailBody = req.body.textEmailBody;
             var htmlEmailBody = req.body.htmlEmailBody;
 
-            logger.get().debug({req : req}, 'Sending email...');
+            logger.get().debug({req : req}, 'Sending email to %s...', toAddress);
             yield helpers.sendMail(fromAddress, toAddress, subject, textEmailBody, htmlEmailBody);
 
-            logger.get().debug({req : req}, 'Email sent successfully.');
+            logger.get().debug({req : req}, 'Email sent successfully to %s.', toAddress);
             res.status(200).json({});
         }
         else{
-            throw new BadRequestException('action is not specified or unknown in query string.', errorcode.InvalidSendMailBody);
+            throw new BadRequestException('action is not specified or unknown in query string.', errorcode.InvalidSendMailAction);
         }         
     }));
 
